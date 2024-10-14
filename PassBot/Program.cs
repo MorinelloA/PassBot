@@ -28,8 +28,8 @@ services.AddSingleton<IProfileService, ProfileService>();
 services.AddSingleton<ISpreadsheetService, SpreadsheetService>();
 
 // Register command modules as services
-services.AddSingleton<PointsCommands>();
-services.AddSingleton<ProfileCommands>();
+services.AddSingleton<PointsCommandsDM>();
+services.AddSingleton<ProfileCommandsServer>();
 services.AddSingleton<AdminCommands>();
 
 // Build the service provider
@@ -40,7 +40,7 @@ var discord = new DiscordClient(new DiscordConfiguration()
 {
     Token = configuration["DiscordToken"],
     TokenType = TokenType.Bot,
-    Intents = DiscordIntents.AllUnprivileged
+    Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
 });
 
 discord.UseInteractivity(new InteractivityConfiguration
@@ -59,8 +59,10 @@ var slash = discord.UseSlashCommands(new SlashCommandsConfiguration
     Services = serviceProvider
 });
 
-slash.RegisterCommands<PointsCommands>(guildId: ulong.Parse(configuration["GuildId"]));
-slash.RegisterCommands<ProfileCommands>(guildId: ulong.Parse(configuration["GuildId"]));
+slash.RegisterCommands<PointsCommandsServer>(guildId: ulong.Parse(configuration["GuildId"]));
+slash.RegisterCommands<PointsCommandsDM>();
+slash.RegisterCommands<ProfileCommandsServer>(guildId: ulong.Parse(configuration["GuildId"]));
+slash.RegisterCommands<ProfileCommandsDM>();
 slash.RegisterCommands<AdminCommands>(guildId: ulong.Parse(configuration["GuildId"]));
 
 // Connect the bot

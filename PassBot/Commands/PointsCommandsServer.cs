@@ -11,11 +11,11 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PassBot.Commands
 { 
-    public class PointsCommands : ApplicationCommandModule
+    public class PointsCommandsServer : ApplicationCommandModule
     {
         private readonly IPointsService _pointsService;
 
-        public PointsCommands(IPointsService pointsService)
+        public PointsCommandsServer(IPointsService pointsService)
         {
             _pointsService = pointsService;
         }
@@ -73,13 +73,6 @@ namespace PassBot.Commands
             long totalPoints = await _pointsService.GetUserPoints(user.Id.ToString());
 
             await EmbedUtils.CreateAndSendUpdatePointsEmbed(ctx, ctx.User, points, totalPoints);
-        }
-
-        [SlashCommand("view-points", "View your total points.")]
-        public async Task ViewMyPointsCommand(InteractionContext ctx)
-        {
-            long points = await _pointsService.GetUserPoints(ctx.User.Id.ToString());
-            await EmbedUtils.CreateAndSendViewPointsEmbed(ctx, ctx.User, points);
         }
 
         [SlashCommand("view-user-points", "View the total points of a specified user.")]
