@@ -1,0 +1,169 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Repos\\pass-bot\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|c:\\repos\\pass-bot\\passbot\\passbot.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|solutionrelative:passbot\\passbot.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|c:\\repos\\pass-bot\\passbot\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|solutionrelative:passbot\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|c:\\repos\\pass-bot\\passbot\\appsettings.production.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|solutionrelative:passbot\\appsettings.production.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|c:\\repos\\pass-bot\\passbot\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|solutionrelative:passbot\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|c:\\repos\\pass-bot\\passbot\\passbot.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|solutionrelative:passbot\\passbot.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|c:\\repos\\pass-bot\\passbot\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{99F4B4A6-631F-4129-8FE3-98778A0311D7}|PassBot\\PassBot.csproj|solutionrelative:passbot\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 13,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:135:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:136:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:130:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:13:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:14:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:15:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:17:0:{2456bd12-ecf7-4988-a4a6-67d49173f565}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:131:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:132:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:133:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:134:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "PassBot.csproj",
+              "DocumentMoniker": "C:\\Repos\\pass-bot\\PassBot\\PassBot.csproj",
+              "RelativeDocumentMoniker": "PassBot\\PassBot.csproj",
+              "ToolTip": "C:\\Repos\\pass-bot\\PassBot\\PassBot.csproj",
+              "RelativeToolTip": "PassBot\\PassBot.csproj",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2024-10-14T19:28:47.865Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Repos\\pass-bot\\PassBot\\appsettings.json",
+              "RelativeDocumentMoniker": "PassBot\\appsettings.json",
+              "ToolTip": "C:\\Repos\\pass-bot\\PassBot\\appsettings.json",
+              "RelativeToolTip": "PassBot\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2024-10-14T19:22:48.689Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "appsettings.Development.json",
+              "DocumentMoniker": "C:\\Repos\\pass-bot\\PassBot\\appsettings.Development.json",
+              "RelativeDocumentMoniker": "PassBot\\appsettings.Development.json",
+              "ToolTip": "C:\\Repos\\pass-bot\\PassBot\\appsettings.Development.json",
+              "RelativeToolTip": "PassBot\\appsettings.Development.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2024-10-14T19:22:42.81Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "appsettings.Production.json",
+              "DocumentMoniker": "C:\\Repos\\pass-bot\\PassBot\\appsettings.Production.json",
+              "RelativeDocumentMoniker": "PassBot\\appsettings.Production.json",
+              "ToolTip": "C:\\Repos\\pass-bot\\PassBot\\appsettings.Production.json",
+              "RelativeToolTip": "PassBot\\appsettings.Production.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2024-10-14T19:22:27.628Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "PassBot",
+              "DocumentMoniker": "C:\\Repos\\pass-bot\\PassBot\\PassBot.csproj",
+              "RelativeDocumentMoniker": "PassBot\\PassBot.csproj",
+              "ToolTip": "C:\\Repos\\pass-bot\\PassBot\\PassBot.csproj",
+              "RelativeToolTip": "PassBot\\PassBot.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2024-10-14T19:21:35.458Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Repos\\pass-bot\\PassBot\\Program.cs",
+              "RelativeDocumentMoniker": "PassBot\\Program.cs",
+              "ToolTip": "C:\\Repos\\pass-bot\\PassBot\\Program.cs",
+              "RelativeToolTip": "PassBot\\Program.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAACYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-10-14T18:39:00.662Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
