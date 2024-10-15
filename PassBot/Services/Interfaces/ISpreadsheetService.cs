@@ -1,10 +1,4 @@
-﻿using DSharpPlus.Entities;
-using PassBot.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using PassBot.Models;
 
 namespace PassBot.Services.Interfaces
 {

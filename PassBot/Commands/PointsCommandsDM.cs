@@ -1,13 +1,6 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.SlashCommands;
-using PassBot.Models;
-using PassBot.Services;
+﻿using DSharpPlus.SlashCommands;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PassBot.Commands
 { 

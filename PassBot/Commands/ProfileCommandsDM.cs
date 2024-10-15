@@ -1,8 +1,4 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using PassBot.Models;
-using PassBot.Services;
+﻿using DSharpPlus.SlashCommands;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
 

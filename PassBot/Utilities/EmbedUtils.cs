@@ -1,5 +1,4 @@
-﻿using DSharpPlus;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using PassBot.Models;
 
@@ -7,13 +6,24 @@ namespace PassBot.Utilities
 {
     public static class EmbedUtils
     {
-        public static async Task CreateAndSendUpdatePointsEmbed(InteractionContext ctx, DiscordUser user, long points, long totalPoints)
+        public static async Task CreateAndSendUpdatePointsEmbed(InteractionContext ctx, DiscordUser user, long points, long totalPoints, string message = "")
         {
+            // Create the base description for the points response
+            string description = points > 0
+                ? $"{points} points added to {user.Mention}"
+                : $"{-points} points removed from {user.Mention}";
+
+            // If a message is provided, append it below the description
+            if (!string.IsNullOrEmpty(message))
+            {
+                description = $"**{message}**\n{description}";
+            }
+
             // Create an embed builder for the points response
             var embed = new DiscordEmbedBuilder
             {
                 Title = points > 0 ? "Points Added" : "Points Removed",
-                Description = points > 0 ? $"{points} points added to {user.Mention}" : $"{-points} points removed from {user.Mention}",
+                Description = description,
                 Color = DiscordColor.Azure // You can customize the color here
             };
 
@@ -100,26 +110,34 @@ namespace PassBot.Utilities
 
         public static async Task CreateAndSendWarningEmbed(InteractionContext ctx, string title, string description)
         {
-            var embed = new DiscordEmbedBuilder
-            {
-                Title = title,
-                Description = description,
-                Color = DiscordColor.Orange
-            };
-
+            var embed = CreateWarningEmbed(title, description);
             await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
         }
 
         public static async Task CreateAndSendSuccessEmbed(InteractionContext ctx, string title, string description)
         {
-            var embed = new DiscordEmbedBuilder
+            var embed = CreateSuccessEmbed(title, description);
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+        }
+
+        public static DiscordEmbedBuilder CreateSuccessEmbed(string title, string description)
+        {
+            return new DiscordEmbedBuilder
             {
                 Title = title,
                 Description = description,
                 Color = DiscordColor.Green
             };
+        }
 
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+        public static DiscordEmbedBuilder CreateWarningEmbed(string title, string description)
+        {
+            return new DiscordEmbedBuilder
+            {
+                Title = title,
+                Description = description,
+                Color = DiscordColor.Orange
+            };
         }
     }
 }

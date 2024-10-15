@@ -1,5 +1,4 @@
 ﻿using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using PassBot.Models;

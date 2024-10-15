@@ -1,13 +1,9 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
-using PassBot.Models;
-using PassBot.Services;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PassBot.Commands
 { 
@@ -24,7 +20,7 @@ namespace PassBot.Commands
         public async Task RemovePointsCommand(InteractionContext ctx,
             [Option("user", "The user to remove points from")] DiscordUser user,
             [Option("points", "The number of points to remove")] long pointsToRemove,
-            [Option("message", "The reason for the points assignment")] string message = null)
+            [Option("message", "The reason for the points assignment")] string message)
         {
             // Ensure the points to remove is positive
             if (pointsToRemove <= 0)
@@ -33,11 +29,17 @@ namespace PassBot.Commands
                 return;
             }
 
+            if (string.IsNullOrEmpty(message))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Please give a reason points are being removed");
+                return;
+            }
+
             await _pointsService.UpdatePoints(ctx.User, user, -pointsToRemove, message);
 
             long totalPoints = await _pointsService.GetUserPoints(user.Id.ToString());
 
-            await EmbedUtils.CreateAndSendUpdatePointsEmbed(ctx, ctx.User, -pointsToRemove, totalPoints);
+            await EmbedUtils.CreateAndSendUpdatePointsEmbed(ctx, user, -pointsToRemove, totalPoints, message);
         }
 
         [SlashCommand("add-points", "Adds points to a specified user.")]
@@ -54,6 +56,29 @@ namespace PassBot.Commands
             [Option("category", "Category for points")] string category = null,
             [Option("message", "Reason for points assignment")] string message = null)
         {
+            // Define a dictionary for mapping category keys to readable strings
+            var categoryDisplayNames = new Dictionary<string, string>()
+            {
+                { "AnswerPoll", "Answer Poll" },
+                { "AttendCall", "Attend a Call" },
+                { "AttendFeedbackMeeting", "Attend Feedback Meeting" },
+                { "BetaSignup", "Beta Signup" },
+                { "BetaTesting", "Beta Testing" },
+                { "HaveCallQuestionAnswered", "Have Call Question Answered" },
+                { "TakeSurvey", "Take a Survey" }
+            };
+
+            string _message;
+
+            if (!string.IsNullOrEmpty(category) && categoryDisplayNames.ContainsKey(category) && string.IsNullOrEmpty(message))
+            {
+                _message = categoryDisplayNames[category]; // Get the human-readable version of the category
+            }
+            else
+            {
+                _message = message; // Fallback to the custom message if no category is selected
+            }
+
             if (pointsToAdd.HasValue && !string.IsNullOrEmpty(category))
             {
                 await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"You cannot provide both points and a category");
@@ -68,11 +93,11 @@ namespace PassBot.Commands
                 return;
             }
 
-            await _pointsService.UpdatePoints(ctx.User, user, points, message);
+            await _pointsService.UpdatePoints(ctx.User, user, points, _message);
 
-            long totalPoints = await _pointsService.GetUserPoints(user.Id.ToString());
+            long totalPoints = await _pointsService.GetUserPoints(user.Id.ToString());            
 
-            await EmbedUtils.CreateAndSendUpdatePointsEmbed(ctx, ctx.User, points, totalPoints);
+            await EmbedUtils.CreateAndSendUpdatePointsEmbed(ctx, user, points, totalPoints, _message);
         }
 
         [SlashCommand("view-user-points", "View the total points of a specified user.")]

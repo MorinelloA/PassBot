@@ -1,10 +1,7 @@
 ﻿using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
-using PassBot.Models;
-using PassBot.Services;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
-using System.IO;
 
 public class AdminCommands : ApplicationCommandModule
 {
@@ -20,7 +17,7 @@ public class AdminCommands : ApplicationCommandModule
     [SlashCommand("generate-user-report", "Generates a user .xlsx report and sends it to you")]
     public async Task GenerateReportCommand(InteractionContext ctx)
     {
-        var users = await _profileService.GetAllUserProfilesWithPoints(); // Fetch from database
+        var users = await _profileService.GetAllUserProfilesWithPoints();
         var stream = await _spreadsheetService.GenerateUserReport(users);
 
         var response = new DiscordInteractionResponseBuilder()

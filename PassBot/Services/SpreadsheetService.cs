@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Configuration;
 using PassBot.Models;
 using PassBot.Services.Interfaces;
-using System.IO;
 
 namespace PassBot.Services
 {
