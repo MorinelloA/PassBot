@@ -146,7 +146,7 @@ namespace PassBot.Services
             await AddPoints(discordId, discordUsername, _checkInPoints);
 
             // Log points assignment
-            await LogPointsAssignment(discordId, discordUsername, discordId, discordUsername, _checkInPoints);
+            await LogPointsAssignment(discordId, discordUsername, discordId, discordUsername, _checkInPoints, "Check-In");
 
             // Update the check-in time for the user
             await UpdateCheckInTime(discordId, discordUsername);

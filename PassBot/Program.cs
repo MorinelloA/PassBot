@@ -36,12 +36,14 @@ services.AddSingleton<IProfileService, ProfileService>();
 services.AddSingleton<ISpreadsheetService, SpreadsheetService>();
 services.AddSingleton<IBotService, BotService>();
 services.AddSingleton<IEmailService, EmailService>();
+services.AddSingleton<IRedemptionService, RedemptionService>();
 
 // Register command modules as services
 services.AddSingleton<PointsCommandsDM>();
 services.AddSingleton<PointsCommandsServer>();
 services.AddSingleton<ProfileCommandsDM>();
 services.AddSingleton<ProfileCommandsServer>();
+services.AddSingleton<RedemptionCommandsServer>();
 services.AddSingleton<AdminCommands>();
 
 // Build the service provider
@@ -68,6 +70,8 @@ slash.RegisterCommands<PointsCommandsServer>(guildId: ulong.Parse(configuration[
 slash.RegisterCommands<PointsCommandsDM>();
 slash.RegisterCommands<ProfileCommandsServer>(guildId: ulong.Parse(configuration["GuildId"]));
 slash.RegisterCommands<ProfileCommandsDM>();
+slash.RegisterCommands<RedemptionCommandsServer>(guildId: ulong.Parse(configuration["GuildId"]));
+slash.RegisterCommands<RedemptionCommandsDM>();
 slash.RegisterCommands<AdminCommands>(guildId: ulong.Parse(configuration["GuildId"]));
 
 // Connect the bot

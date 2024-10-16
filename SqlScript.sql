@@ -192,3 +192,44 @@ USE [master]
 GO
 ALTER DATABASE [PassApp] SET  READ_WRITE 
 GO
+
+CREATE TABLE [dbo].[Item](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [nvarchar](255) NOT NULL,
+	[CreatedOn] [datetime] NOT NULL,
+	[CreatedBy] [nvarchar](100) NOT NULL,
+	[Cost] [bigint] NOT NULL,
+	[ExpiresOn] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[Item] ADD  DEFAULT (getutcdate()) FOR [CreatedOn]
+GO
+
+CREATE TABLE [dbo].[Redemption](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[ItemId] [int] NOT NULL,
+	[DiscordId] [nvarchar](100) NOT NULL,
+	[DiscordUsername] [nvarchar](255) NOT NULL,
+	[ClaimedOn] [datetime] NOT NULL,
+	[SentBy] [nvarchar](100) NULL,
+	[SentOn] [datetime] NULL,
+	[Spent] [bigint] NOT NULL,
+	[RedemptionId] [nvarchar](21) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[Redemption] ADD  DEFAULT (getdate()) FOR [ClaimedOn]
+GO
+
+ALTER TABLE [dbo].[Redemption]  WITH CHECK ADD FOREIGN KEY([ItemId])
+REFERENCES [dbo].[Item] ([Id])
+GO

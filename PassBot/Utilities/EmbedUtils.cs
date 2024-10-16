@@ -139,5 +139,89 @@ namespace PassBot.Utilities
                 Color = DiscordColor.Orange
             };
         }
+
+        public static async Task CreateAndSendItemsListEmbed(InteractionContext ctx, List<Item> items)
+        {
+            // Create an embed builder
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = "Available Items",
+                Description = "Here are the currently available items:",
+                Color = DiscordColor.Azure
+            };
+
+            // Add each item as a field in the embed
+            foreach (var item in items)
+            {
+                embed.AddField(item.Name, $"Cost: {item.Cost} points", false); // False means the fields will appear in a list
+            }
+
+            // Send the embed response
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder()
+                .AddEmbed(embed));
+        }
+
+        public static async Task CreateAndSendOpenRedemptionsEmbed(InteractionContext ctx, List<Redemption> openRedemptions)
+        {
+            // Check if there are any open redemptions
+            if (openRedemptions == null || !openRedemptions.Any())
+            {
+                await CreateAndSendWarningEmbed(ctx, "No Open Redemptions", "There are currently no open redemptions.");
+                return;
+            }
+
+            // Create the embed
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = "Open Redemptions",
+                Color = DiscordColor.Azure
+            };
+
+            // Add each redemption to the embed
+            foreach (var redemption in openRedemptions)
+            {
+                var redemptionInfo = $@"
+                    **ID**: {redemption.RedemptionId}
+                    **Username**: {redemption.DiscordUsername}
+                    **Claimed On**: {redemption.ClaimedOn:yyyy-MM-dd HH:mm:ss}";
+
+                embed.AddField(redemption.ItemName, redemptionInfo, false);
+            }
+
+            // Send the embed
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+        }
+
+        public static async Task CreateAndSendUserRedemptionsEmbed(InteractionContext ctx, List<Redemption> userRedemptions, DiscordUser user)
+        {
+            // Check if the user has any redemptions
+            if (userRedemptions == null || !userRedemptions.Any())
+            {
+                await CreateAndSendWarningEmbed(ctx, "No Redemptions Found", $"{user.Username} has not made any redemptions.");
+                return;
+            }
+
+            // Create the embed
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = $"{user.Username}'s Redemptions",
+                Color = DiscordColor.Azure
+            };
+
+            // Add each redemption to the embed
+            foreach (var redemption in userRedemptions)
+            {
+                var redemptionStatus = redemption.SentOn == null ? "Not Filled" : "Filled";
+                var redemptionInfo = $@"
+                    **ID**: {redemption.RedemptionId}
+                    **Claimed On**: {redemption.ClaimedOn:yyyy-MM-dd}
+                    **Status**: {redemptionStatus}";
+
+                embed.AddField(redemption.ItemName, redemptionInfo, false);
+            }
+
+            // Send the embed
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+        }
     }
 }
