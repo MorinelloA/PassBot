@@ -54,11 +54,11 @@ namespace PassBot.Commands
             }
 
             // Redeem the item (save to Redemption table) and deduct points
-            await _redemptionService.RedeemItemAsync(item, ctx.User.Id.ToString(), ctx.User.Username, item.Cost);
+            var redemptionId = await _redemptionService.RedeemItemAsync(item, ctx.User.Id.ToString(), ctx.User.Username, item.Cost);
 
             // Update user points and log the redemption
             await _pointsService.AddPoints(ctx.User.Id.ToString(), ctx.User.Username, -item.Cost);
-            await _pointsService.LogPointsAssignment(ctx.User.Id.ToString(), ctx.User.Username, ctx.User.Id.ToString(), ctx.User.Username, -item.Cost, $"Redeemed item: {item.Name}");
+            await _pointsService.LogPointsAssignment(ctx.User.Id.ToString(), ctx.User.Username, ctx.User.Id.ToString(), ctx.User.Username, -item.Cost, $"Redeemed item: {item.Name} - {redemptionId}");
 
             // Send a success embed (no need to display the RedemptionId)
             await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Item Redeemed", $"You have successfully redeemed '{item.Name}' for {item.Cost} points.");

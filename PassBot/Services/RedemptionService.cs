@@ -160,7 +160,7 @@ namespace PassBot.Services
             }
         }
 
-        public async Task RedeemItemAsync(Item item, string discordId, string discordUsername, long spent)
+        public async Task<string> RedeemItemAsync(Item item, string discordId, string discordUsername, long spent)
         {
             // Generate a NanoID
             var redemptionId = Nanoid.Generate(size: 12);
@@ -183,6 +183,8 @@ namespace PassBot.Services
                     await command.ExecuteNonQueryAsync();
                 }
             }
+
+            return redemptionId;
         }
 
         public async Task<List<Redemption>> GetOpenRedemptionsAsync()
