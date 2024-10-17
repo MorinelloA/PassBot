@@ -17,7 +17,7 @@ namespace PassBot.Commands
             _redemptionService = redemptionService;
         }
 
-        [SlashCommand("view-items", "View all available items.")]
+        [SlashCommand("view-items", "View all available items for redemption.")]
         public async Task ViewItemsCommand(InteractionContext ctx)
         {
             // Retrieve the list of non-expired items
@@ -46,7 +46,7 @@ namespace PassBot.Commands
             }
 
             // Check if the user has enough points
-            var userPoints = await _pointsService.GetUserPoints(ctx.User.Id.ToString());
+            var userPoints = await _pointsService.GetUserPointsAsync(ctx.User.Id.ToString());
             if (userPoints < item.Cost)
             {
                 await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Insufficient Points", $"You don't have enough points to redeem '{item.Name}'. Required: {item.Cost}, Available: {userPoints}.");
@@ -57,8 +57,8 @@ namespace PassBot.Commands
             var redemptionId = await _redemptionService.RedeemItemAsync(item, ctx.User.Id.ToString(), ctx.User.Username, item.Cost);
 
             // Update user points and log the redemption
-            await _pointsService.AddPoints(ctx.User.Id.ToString(), ctx.User.Username, -item.Cost);
-            await _pointsService.LogPointsAssignment(ctx.User.Id.ToString(), ctx.User.Username, ctx.User.Id.ToString(), ctx.User.Username, -item.Cost, $"Redeemed item: {item.Name} - {redemptionId}");
+            await _pointsService.AddPointsAsync(ctx.User.Id.ToString(), ctx.User.Username, -item.Cost);
+            await _pointsService.LogPointsAssignmentAsync(ctx.User.Id.ToString(), ctx.User.Username, ctx.User.Id.ToString(), ctx.User.Username, -item.Cost, $"Redeemed item: {item.Name} - {redemptionId}");
 
             // Send a success embed (no need to display the RedemptionId)
             await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Item Redeemed", $"You have successfully redeemed '{item.Name}' for {item.Cost} points.");

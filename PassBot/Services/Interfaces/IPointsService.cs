@@ -1,4 +1,5 @@
 ﻿using DSharpPlus.Entities;
+using PassBot.Models;
 
 namespace PassBot.Services.Interfaces
 {
@@ -14,5 +15,6 @@ namespace PassBot.Services.Interfaces
         Task CheckInUserAsync(string discordId, string discordUsername);
         Task<DateTime?> GetLastCheckInAsync(string discordId);
         Task UpdateCheckInTimeAsync(string discordId, string discordUsername);
+        Task<List<UserPointsLog>> GetUserPointsLogByDiscordIdAsync(string discordId, bool includeRemoved = true);
     }
 }

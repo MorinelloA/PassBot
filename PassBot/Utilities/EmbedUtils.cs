@@ -223,5 +223,75 @@ namespace PassBot.Utilities
             // Send the embed
             await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
         }
+
+        public static async Task CreateAndSendCommandListEmbed(InteractionContext ctx, List<(string Command, string Description)> commands)
+        {
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = "Available Commands",
+                Description = "Here is a list of commands you may use:",
+                Color = DiscordColor.Azure
+            };
+
+            // Add fields for each command with its description
+            foreach (var (command, description) in commands)
+            {
+                embed.AddField($"/{command}", description, inline: false);
+            }
+
+            // Send the embed response
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+        }
+
+        public static List<(string Command, string Description)> GetAvailableCommands()
+        {
+            return new List<(string Command, string Description)>
+            {
+                ("view-points", "View your total points."),
+                ("check-in", "Check-in to get points. This can only be done once every 23 hours."),
+
+                ("view-profile", "Views your profile."),
+                ("set-email", "Set your email address."),
+                ("view-email", "View your email address."),
+                ("set-wallet-address", "Set your Pass wallet address."),
+                ("view-wallet", "View your Pass wallet address."),
+
+                ("view-items", "View all available items for redemption."),
+                ("redeem-item", "Redeem an item by spending points."),
+                ("view-redemptions", "View all of your redemptions."),
+
+                ("view-commands", "Shows you the list of commands you may use.")
+            };
+        }
+
+        public static List<(string Command, string Description)> GetAvailableAdminCommands()
+        {
+            return new List<(string Command, string Description)>
+            {
+
+                ("add-points", "Adds points to a specified user."),
+                ("remove-points", "Removes points from a specified user."),
+                ("clear-points", "Clears all points from the system."),
+                ("view-user-points", "View the total points of a specified user."),
+
+                ("set-user-email", "Set the email address of a specified user."),
+                ("view-user-email", "View the email address of a specified user."),
+                ("set-user-wallet-address", "Set the wallet address of a specified user."),
+                ("view-user-wallet", "View the total points of a specified user."),
+                ("view-user-profile", "Views the profile of a specified user."),
+
+                ("add-item", "Add an item for users to redeem."),
+                ("remove-item", "Remove an item by marking it as expired."),
+                ("view-open-redemptions", "View all open (unsent) redemptions."),
+                ("view-user-redemptions", "View all redemptions made by a specific user."),
+                ("close-redemption", "Mark a redemption as completed."),
+
+                ("generate-points-report", "Generates an .xlsx report of current points for every user and sends it to you."),
+                ("generate-user-report", "Generates an .xlsx report of all point actions for a specific user and sends it to you."),
+
+                ("ping", "Checks if the bot is active."),
+                ("view-admin-commands", "Shows you the list of admin commands you may use.")
+            };
+        }
     }
 }

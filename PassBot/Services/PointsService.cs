@@ -199,6 +199,57 @@ namespace PassBot.Services
             }
         }
 
+        public async Task<List<UserPointsLog>> GetUserPointsLogByDiscordIdAsync(string discordId, bool includeRemoved = true)
+        {
+            var logs = new List<UserPointsLog>();
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                // SQL query with conditional filtering based on 'includeRemoved'
+                string query = @"
+                    SELECT DiscordId, DiscordUsername, Points, AssignerId, AssignerUsername, InsertedAt, RemovedBy, RemovedAt, Message
+                    FROM UserPointsTableLog
+                    WHERE DiscordId = @DiscordId";
+
+                // Add condition to filter out removed records if 'includeRemoved' is false
+                if (!includeRemoved)
+                {
+                    query += " AND RemovedAt IS NULL";
+                }
+
+                query += " ORDER BY InsertedAt DESC";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DiscordId", discordId);
+
+                    await connection.OpenAsync();
+
+                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var log = new UserPointsLog
+                            {
+                                DiscordId = reader["DiscordId"].ToString(),
+                                DiscordUsername = reader["DiscordUsername"]?.ToString(),
+                                Points = Convert.ToInt32(reader["Points"]),
+                                AssignerId = reader["AssignerId"].ToString(),
+                                AssignerUsername = reader["AssignerUsername"]?.ToString(),
+                                InsertedAt = Convert.ToDateTime(reader["InsertedAt"]),
+                                RemovedBy = reader["RemovedBy"]?.ToString(),
+                                RemovedAt = reader["RemovedAt"] as DateTime?,
+                                Message = reader["Message"]?.ToString(),
+                            };
+                            logs.Add(log);
+                        }
+                    }
+                }
+            }
+
+            return logs;
+        }
+
 
         public async Task TruncateUserPointsTableAsync(string removerDiscordId)
         {

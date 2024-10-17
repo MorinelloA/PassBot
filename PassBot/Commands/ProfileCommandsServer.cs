@@ -33,7 +33,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
             return;
         }
 
-        await _profileService.SetEmail(user, email);
+        await _profileService.SetEmailAsync(user, email);
         await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s email address has been updated to {email}");
     }
 
@@ -47,7 +47,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
             return;
         }
 
-        var profile = await _profileService.GetUserProfile(user.Id.ToString());
+        var profile = await _profileService.GetUserProfileAsync(user.Id.ToString());
         if (profile == null || String.IsNullOrEmpty(profile.Email))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No Email Found", $"It looks like this user hasn't set an email address yet! Use `/set-user-email` to add an email to their profile");
@@ -72,7 +72,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
             return;
         }
 
-        await _profileService.SetWalletAddress(user, walletAddress);
+        await _profileService.SetWalletAddressAsync(user, walletAddress);
         await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s wallet address has been updated to {walletAddress}");
     }
 
@@ -86,7 +86,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
             return;
         }
 
-        var profile = await _profileService.GetUserProfile(user.Id.ToString());
+        var profile = await _profileService.GetUserProfileAsync(user.Id.ToString());
         if (profile == null || String.IsNullOrEmpty(profile.WalletAddress))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No Wallet Found", $"It looks like this user hasn't set an wallet address yet! Use `/set-user-wallet` to add a wallet to their profile.");
@@ -105,7 +105,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
             return;
         }
 
-        var profile = await _profileService.GetUserProfileWithPointsByDiscordId(user.Id.ToString());
+        var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(user.Id.ToString());
         if (profile == null)
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Profile not found", $"Try setting an email or wallet address");

@@ -33,14 +33,14 @@ public class ProfileCommandsDM : ApplicationCommandModule
             return;
         }
 
-        await _profileService.SetEmail(ctx.User, email);
+        await _profileService.SetEmailAsync(ctx.User, email);
         await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your email has been set to {email}");
     }
 
     [SlashCommand("view-email", "View your email address.")]
     public async Task ViewEmailCommand(InteractionContext ctx)
     {
-        var profile = await _profileService.GetUserProfile(ctx.User.Id.ToString());
+        var profile = await _profileService.GetUserProfileAsync(ctx.User.Id.ToString());
         if (profile == null || String.IsNullOrEmpty(profile.Email))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No Email Found", $"It looks like you haven't set an email address yet! Use `/set-email` to add your email to your profile");
@@ -49,7 +49,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
         await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, ctx.User, profile.Email, "Email");
     }
 
-    [SlashCommand("set-wallet-address", "Set your wallet address.")]
+    [SlashCommand("set-wallet-address", "Set your Pass wallet address.")]
     public async Task SetWalletAddressCommand(InteractionContext ctx, [Option("wallet-address", "Your Ethereum wallet address")] string walletAddress)
     {
         // Get the time until the user can update their email again
@@ -69,14 +69,14 @@ public class ProfileCommandsDM : ApplicationCommandModule
             return;
         }
 
-        await _profileService.SetWalletAddress(ctx.User, walletAddress);
+        await _profileService.SetWalletAddressAsync(ctx.User, walletAddress);
         await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your wallet address has been updated to {walletAddress}");
     }
 
     [SlashCommand("view-wallet", "View your wallet address.")]
     public async Task ViewWalletCommand(InteractionContext ctx)
     {
-        var profile = await _profileService.GetUserProfile(ctx.User.Id.ToString());
+        var profile = await _profileService.GetUserProfileAsync(ctx.User.Id.ToString());
         if (profile == null || String.IsNullOrEmpty(profile.WalletAddress))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No Wallet Found", $"It looks like you haven't set a wallet address yet! Use `/set-wallet` to add your wallet to your profile.");
@@ -88,7 +88,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
     [SlashCommand("view-profile", "View your profile.")]
     public async Task ViewProfileCommand(InteractionContext ctx)
     {
-        var profile = await _profileService.GetUserProfileWithPointsByDiscordId(ctx.User.Id.ToString());
+        var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(ctx.User.Id.ToString());
         if (profile == null)
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Profile not found", $"Try setting an email or wallet address");

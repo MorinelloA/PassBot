@@ -16,7 +16,7 @@ namespace PassBot.Commands
         [SlashCommand("view-points", "View your total points.")]
         public async Task ViewMyPointsCommand(InteractionContext ctx)
         {
-            long points = await _pointsService.GetUserPoints(ctx.User.Id.ToString());
+            long points = await _pointsService.GetUserPointsAsync(ctx.User.Id.ToString());
             await EmbedUtils.CreateAndSendViewPointsEmbed(ctx, ctx.User, points);
         }
     }

@@ -45,9 +45,9 @@ namespace PassBot.Commands
                 return;
             }
 
-            await _pointsService.UpdatePoints(ctx.User, user, -pointsToRemove, message);
+            await _pointsService.UpdatePointsAsync(ctx.User, user, -pointsToRemove, message);
 
-            long totalPoints = await _pointsService.GetUserPoints(user.Id.ToString());
+            long totalPoints = await _pointsService.GetUserPointsAsync(user.Id.ToString());
 
             await EmbedUtils.CreateAndSendUpdatePointsEmbed(ctx, user, -pointsToRemove, totalPoints, message);
         }
@@ -102,7 +102,7 @@ namespace PassBot.Commands
                 return;
             }
 
-            long points = await _pointsService.GetPointsToAssign(pointsToAdd, category);
+            long points = await _pointsService.GetPointsToAssignAsync(pointsToAdd, category);
 
             if (points <= 0)
             {
@@ -110,9 +110,9 @@ namespace PassBot.Commands
                 return;
             }
 
-            await _pointsService.UpdatePoints(ctx.User, user, points, _message);
+            await _pointsService.UpdatePointsAsync(ctx.User, user, points, _message);
 
-            long totalPoints = await _pointsService.GetUserPoints(user.Id.ToString());            
+            long totalPoints = await _pointsService.GetUserPointsAsync(user.Id.ToString());            
 
             await EmbedUtils.CreateAndSendUpdatePointsEmbed(ctx, user, points, totalPoints, _message);
         }
@@ -127,7 +127,7 @@ namespace PassBot.Commands
                 return;
             }
 
-            long points = await _pointsService.GetUserPoints(user.Id.ToString());
+            long points = await _pointsService.GetUserPointsAsync(user.Id.ToString());
             await EmbedUtils.CreateAndSendViewPointsEmbed(ctx, user, points);
         }
 
@@ -138,7 +138,7 @@ namespace PassBot.Commands
             var discordUsername = ctx.User.Discriminator == "0" ? ctx.User.Username : $"{ctx.User.Username}#{ctx.User.Discriminator}";
 
             // Check if the user can check-in
-            var (isAllowed, remainingTime) = await _pointsService.CanCheckIn(discordId);
+            var (isAllowed, remainingTime) = await _pointsService.CanCheckInAsync(discordId);
 
             if (!isAllowed && remainingTime.HasValue)
             {
@@ -147,10 +147,10 @@ namespace PassBot.Commands
             }
 
             // Process the check-in and update points
-            await _pointsService.CheckInUser(discordId, discordUsername);
+            await _pointsService.CheckInUserAsync(discordId, discordUsername);
 
             // Get the user's updated points balance
-            long totalBalance = await _pointsService.GetUserPoints(discordId);
+            long totalBalance = await _pointsService.GetUserPointsAsync(discordId);
 
             // Use the EmbedUtils method to send the embed
             await EmbedUtils.CreateAndSendCheckInEmbed(ctx, totalBalance);
@@ -195,7 +195,7 @@ namespace PassBot.Commands
             if (result.Result.Id == "confirm_clear_points")
             {
                 // User confirmed the action
-                await _pointsService.TruncateUserPointsTable(ctx.User.Id.ToString());
+                await _pointsService.TruncateUserPointsTableAsync(ctx.User.Id.ToString());
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("All points have been cleared."));
             }

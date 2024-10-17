@@ -45,6 +45,7 @@ services.AddSingleton<ProfileCommandsDM>();
 services.AddSingleton<ProfileCommandsServer>();
 services.AddSingleton<RedemptionCommandsServer>();
 services.AddSingleton<AdminCommands>();
+services.AddSingleton<UserCommands>();
 
 // Build the service provider
 var serviceProvider = services.BuildServiceProvider();
@@ -73,6 +74,7 @@ slash.RegisterCommands<ProfileCommandsDM>();
 slash.RegisterCommands<RedemptionCommandsServer>(guildId: ulong.Parse(configuration["GuildId"]));
 slash.RegisterCommands<RedemptionCommandsDM>();
 slash.RegisterCommands<AdminCommands>(guildId: ulong.Parse(configuration["GuildId"]));
+slash.RegisterCommands<UserCommands>();
 
 // Connect the bot
 await discord.ConnectAsync();
