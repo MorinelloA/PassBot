@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using DSharpPlus.Entities;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using PassBot.Models;
@@ -9,10 +10,12 @@ namespace PassBot.Services
     public class ProfileService : IProfileService
     {
         private readonly string _connectionString;
+        private readonly int _profileChangeCooldownDays;
 
         public ProfileService(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _profileChangeCooldownDays = configuration.GetValue<int>("ProfileChangeCooldownDays");
         }
 
         public async Task<UserProfile> GetUserProfile(string discordId)
@@ -71,6 +74,17 @@ namespace PassBot.Services
                     await command.ExecuteNonQueryAsync();
                 }
             }
+
+            var changeLog = new ProfileChangeLog
+            {
+                DiscordId = user.Id.ToString(),
+                DiscordUsername = user.Username,
+                ChangedItem = "Email",
+                ChangedTo = email,
+                ChangedTime = DateTime.UtcNow
+            };
+
+            await AddProfileChangeLogAsync(changeLog);
         }
 
         public async Task SetWalletAddress(DiscordUser user, string walletAddress)
@@ -102,6 +116,17 @@ namespace PassBot.Services
                     await command.ExecuteNonQueryAsync();
                 }
             }
+
+            var changeLog = new ProfileChangeLog
+            {
+                DiscordId = user.Id.ToString(),
+                DiscordUsername = user.Username,
+                ChangedItem = "Wallet Address",
+                ChangedTo = walletAddress,
+                ChangedTime = DateTime.UtcNow
+            };
+
+            await AddProfileChangeLogAsync(changeLog);
         }
 
         public async Task<List<UserProfileWithPoints>> GetAllUserProfilesWithPoints()
@@ -189,5 +214,81 @@ namespace PassBot.Services
             return profile;  // Return null if no record found
         }
 
+        public async Task AddProfileChangeLogAsync(ProfileChangeLog log)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+            INSERT INTO ProfileChangeLog (DiscordId, DiscordUsername, ChangedItem, ChangedTime, ChangedTo)
+            VALUES (@DiscordId, @DiscordUsername, @ChangedItem, @ChangedTime, @ChangedTo)";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DiscordId", log.DiscordId);
+                    command.Parameters.AddWithValue("@DiscordUsername", log.DiscordUsername);
+                    command.Parameters.AddWithValue("@ChangedItem", log.ChangedItem);
+                    command.Parameters.AddWithValue("@ChangedTime", log.ChangedTime);
+                    command.Parameters.AddWithValue("@ChangedTo", log.ChangedTo);
+
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        public async Task<TimeSpan?> GetTimeUntilNextProfileChangeAsync(string discordId, string item)
+        {
+            // Get the last change time for the given item
+            var lastChange = await GetLastChangeTimeAsync(discordId, item);
+
+            // If the user has never changed this item, they can update it immediately
+            if (lastChange == null)
+            {
+                return null;
+            }
+
+            // Get the cooldown period from the config (Assuming _configuration is injected properly)
+            int cooldownDays = _profileChangeCooldownDays;
+
+            // Calculate the next allowed change date
+            var nextAllowedChange = lastChange.Value.AddDays(cooldownDays);
+
+            // If the cooldown has passed, they can update now (no waiting time)
+            if (DateTime.UtcNow >= nextAllowedChange)
+            {
+                return null;
+            }
+
+            // Return the remaining time until the user can change the item
+            return nextAllowedChange - DateTime.UtcNow;
+        }
+
+        public async Task<DateTime?> GetLastChangeTimeAsync(string discordId, string itemName)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+            SELECT TOP 1 ChangedTime
+            FROM ProfileChangeLog
+            WHERE DiscordId = @DiscordId AND ChangedItem = @ItemName
+            ORDER BY ChangedTime DESC";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DiscordId", discordId);
+                    command.Parameters.AddWithValue("@ItemName", itemName);
+
+                    await connection.OpenAsync();
+
+                    var result = await command.ExecuteScalarAsync();
+                    if (result != null)
+                    {
+                        return Convert.ToDateTime(result);
+                    }
+                }
+            }
+
+            return null; // If no record exists, return null
+        }
     }
 }

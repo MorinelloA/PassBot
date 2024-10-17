@@ -233,3 +233,20 @@ GO
 ALTER TABLE [dbo].[Redemption]  WITH CHECK ADD FOREIGN KEY([ItemId])
 REFERENCES [dbo].[Item] ([Id])
 GO
+
+CREATE TABLE [dbo].[ProfileChangeLog](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[DiscordId] [varchar](50) NOT NULL,
+	[DiscordUsername] [varchar](100) NOT NULL,
+	[ChangedItem] [varchar](100) NOT NULL,
+	[ChangedTime] [datetime] NOT NULL,
+	[ChangedTo] [nvarchar](max) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[ProfileChangeLog] ADD  DEFAULT (getutcdate()) FOR [ChangedTime]
+GO

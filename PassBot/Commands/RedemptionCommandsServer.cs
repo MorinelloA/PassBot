@@ -21,8 +21,8 @@ namespace PassBot.Commands
         public async Task AddItemCommand(InteractionContext ctx,
             [Option("name", "The name of the item")] string name,
             [Option("cost", "Cost of the item")] long cost,
-            [Option("month", "Expiration month (optional)")] long? month = null,
-            [Option("day", "Expiration day (optional)")] long? day = null,
+            [Option("month", "Expiration month # (optional)")] long? month = null,
+            [Option("day", "Expiration day # (optional)")] long? day = null,
             [Option("year", "Expiration year (optional)")] long? year = null)
         {
             DateTime? expiresOn = null;

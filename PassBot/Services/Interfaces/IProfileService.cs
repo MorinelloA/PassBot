@@ -10,5 +10,8 @@ namespace PassBot.Services.Interfaces
         Task SetWalletAddress(DiscordUser user, string walletAddress);
         Task<List<UserProfileWithPoints>> GetAllUserProfilesWithPoints();
         Task<UserProfileWithPoints> GetUserProfileWithPointsByDiscordId(string discordId);
+        Task AddProfileChangeLogAsync(ProfileChangeLog changeLog);
+        Task<TimeSpan?> GetTimeUntilNextProfileChangeAsync(string discordId, string item);
+        Task<DateTime?> GetLastChangeTimeAsync(string discordId, string itemName);
     }
 }

@@ -16,6 +16,17 @@ public class ProfileCommandsDM : ApplicationCommandModule
     [SlashCommand("set-email", "Set your email address.")]
     public async Task SetEmailCommand(InteractionContext ctx, [Option("email", "Your email address")] string email)
     {
+        // Get the time until the user can update their email again
+        var timeUntilNextChange = await _profileService.GetTimeUntilNextProfileChangeAsync(ctx.User.Id.ToString(), "Email");
+
+        if (timeUntilNextChange.HasValue)
+        {
+            // Inform the user about the cooldown period remaining
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Cooldown Active",
+                $"You cannot change your email yet. Please wait {timeUntilNextChange.Value.Days} days, {timeUntilNextChange.Value.Hours} hours.");
+            return;
+        }
+
         if (!ValidationUtils.IsValidEmail(email))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The email address '{email}' is not valid", $"Please enter a valid email address");
@@ -41,6 +52,17 @@ public class ProfileCommandsDM : ApplicationCommandModule
     [SlashCommand("set-wallet-address", "Set your wallet address.")]
     public async Task SetWalletAddressCommand(InteractionContext ctx, [Option("wallet-address", "Your Ethereum wallet address")] string walletAddress)
     {
+        // Get the time until the user can update their email again
+        var timeUntilNextChange = await _profileService.GetTimeUntilNextProfileChangeAsync(ctx.User.Id.ToString(), "Wallet Address");
+
+        if (timeUntilNextChange.HasValue)
+        {
+            // Inform the user about the cooldown period remaining
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Cooldown Active",
+                $"You cannot change your wallet address yet. Please wait {timeUntilNextChange.Value.Days} days, {timeUntilNextChange.Value.Hours} hours.");
+            return;
+        }
+
         if (!ValidationUtils.IsValidEthereumAddress(walletAddress))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The wallet address '{walletAddress}' is not valid", $"Please enter a valid Ethereum wallet address");
