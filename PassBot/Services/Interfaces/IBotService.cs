@@ -1,7 +1,10 @@
-﻿namespace PassBot.Services.Interfaces
+﻿using DSharpPlus.Entities;
+
+namespace PassBot.Services.Interfaces
 {
     public interface IBotService
     {
         Task SendMessageToChannelAsync(ulong channelId, string message);
+        bool HasPermission(DiscordUser user);
     }
 }

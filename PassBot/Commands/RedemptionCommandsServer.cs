@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using PassBot.Models;
+using PassBot.Services;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
 
@@ -8,11 +9,13 @@ namespace PassBot.Commands
 { 
     public class RedemptionCommandsServer : ApplicationCommandModule
     {
+        private readonly IBotService _botService;
         private readonly IPointsService _pointsService;
         private readonly IRedemptionService _redemptionService;
 
-        public RedemptionCommandsServer(IPointsService pointsService, IRedemptionService redemptionService)
+        public RedemptionCommandsServer(IBotService botService, IPointsService pointsService, IRedemptionService redemptionService)
         {
+            _botService = botService;
             _pointsService = pointsService;
             _redemptionService = redemptionService;
         }
@@ -25,6 +28,13 @@ namespace PassBot.Commands
             [Option("day", "Expiration day # (optional)")] long? day = null,
             [Option("year", "Expiration year (optional)")] long? year = null)
         {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
             DateTime? expiresOn = null;
 
             // Validate and construct the expiration date if provided
@@ -70,6 +80,13 @@ namespace PassBot.Commands
         [SlashCommand("remove-item", "Remove an item by marking it as expired.")]
         public async Task RemoveItemCommand(InteractionContext ctx, [Option("name", "The name of the item")] string name)
         {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
             // Check if the item exists and is active (non-expired)
             var activeItem = await _redemptionService.GetActiveItemByNameAsync(name);
             if (activeItem == null)
@@ -89,6 +106,13 @@ namespace PassBot.Commands
         [SlashCommand("view-open-redemptions", "View all open (unsent) redemptions.")]
         public async Task ViewOpenRedemptionsCommand(InteractionContext ctx)
         {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
             var openRedemptions = await _redemptionService.GetOpenRedemptionsAsync();
             await EmbedUtils.CreateAndSendOpenRedemptionsEmbed(ctx, openRedemptions);
         }
@@ -96,6 +120,13 @@ namespace PassBot.Commands
         [SlashCommand("view-user-redemptions", "View all redemptions made by a specific user.")]
         public async Task ViewUserRedemptionsCommand(InteractionContext ctx, [Option("user", "The user whose redemptions to view")] DiscordUser user)
         {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
             var userRedemptions = await _redemptionService.GetUserRedemptionsAsync(user.Id.ToString());
             await EmbedUtils.CreateAndSendUserRedemptionsEmbed(ctx, userRedemptions, user);
         }
@@ -103,6 +134,13 @@ namespace PassBot.Commands
         [SlashCommand("close-redemption", "Mark a redemption as completed by setting SentBy and SentOn.")]
         public async Task CloseRedemptionCommand(InteractionContext ctx, [Option("id", "The redemption ID to close")] string redemptionId)
         {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
             var openRedemption = await _redemptionService.GetOpenRedemptionByIdAsync(redemptionId);
 
             if (openRedemption == null)

@@ -2,6 +2,7 @@
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
+using PassBot.Services;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
 
@@ -9,10 +10,12 @@ namespace PassBot.Commands
 { 
     public class PointsCommandsServer : ApplicationCommandModule
     {
+        private readonly IBotService _botService;
         private readonly IPointsService _pointsService;
 
-        public PointsCommandsServer(IPointsService pointsService)
+        public PointsCommandsServer(IBotService botService, IPointsService pointsService)
         {
+            _botService = botService;
             _pointsService = pointsService;
         }
 
@@ -22,6 +25,13 @@ namespace PassBot.Commands
             [Option("points", "The number of points to remove")] long pointsToRemove,
             [Option("message", "The reason for the points assignment")] string message)
         {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
             // Ensure the points to remove is positive
             if (pointsToRemove <= 0)
             {
@@ -56,6 +66,13 @@ namespace PassBot.Commands
             [Option("category", "Category for points")] string category = null,
             [Option("message", "Reason for points assignment")] string message = null)
         {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
             // Define a dictionary for mapping category keys to readable strings
             var categoryDisplayNames = new Dictionary<string, string>()
             {
@@ -103,6 +120,13 @@ namespace PassBot.Commands
         [SlashCommand("view-user-points", "View the total points of a specified user.")]
         public async Task ViewUserPointsCommand(InteractionContext ctx, [Option("user", "The user to view points for")] DiscordUser user)
         {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
             long points = await _pointsService.GetUserPoints(user.Id.ToString());
             await EmbedUtils.CreateAndSendViewPointsEmbed(ctx, user, points);
         }
@@ -135,6 +159,13 @@ namespace PassBot.Commands
         [SlashCommand("clear-points", "Clears all points from the system.")]
         public async Task ClearPointsCommand(InteractionContext ctx)
         {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
             // Create a confirmation button
             var confirmButton = new DiscordButtonComponent(ButtonStyle.Danger, "confirm_clear_points", "Confirm", false);
 

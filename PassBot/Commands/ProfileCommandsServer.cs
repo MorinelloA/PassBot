@@ -1,15 +1,18 @@
 ﻿using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
+using PassBot.Services;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
 
 public class ProfileCommandsServer : ApplicationCommandModule
 {
+    private readonly IBotService _botService;
     private readonly IProfileService _profileService;
     private readonly IPointsService _pointsService;
 
-    public ProfileCommandsServer(IPointsService pointsService, IProfileService profileService)
+    public ProfileCommandsServer(IBotService botService, IPointsService pointsService, IProfileService profileService)
     {
+        _botService = botService;
         _pointsService = pointsService;
         _profileService = profileService;
     }
@@ -17,6 +20,13 @@ public class ProfileCommandsServer : ApplicationCommandModule
     [SlashCommand("set-user-email", "Set the email address of another user.")]
     public async Task SetUserEmailCommand(InteractionContext ctx, [Option("user", "The user to set the email for")] DiscordUser user, [Option("email", "The email address to set")] string email)
     {
+        // Check if the user has permission
+        if (!_botService.HasPermission(ctx.User))
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            return;
+        }
+
         if (!ValidationUtils.IsValidEmail(email))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The email address '{email}' is not valid", $"Please enter a valid email address");
@@ -30,6 +40,13 @@ public class ProfileCommandsServer : ApplicationCommandModule
     [SlashCommand("view-user-email", "View the email address of another user.")]
     public async Task ViewUserEmailCommand(InteractionContext ctx, [Option("user", "The user to view the email for")] DiscordUser user)
     {
+        // Check if the user has permission
+        if (!_botService.HasPermission(ctx.User))
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            return;
+        }
+
         var profile = await _profileService.GetUserProfile(user.Id.ToString());
         if (profile == null || String.IsNullOrEmpty(profile.Email))
         {
@@ -42,6 +59,13 @@ public class ProfileCommandsServer : ApplicationCommandModule
     [SlashCommand("set-user-wallet-address", "Set the wallet address of another user.")]
     public async Task SetUserWalletAddressCommand(InteractionContext ctx, [Option("user", "The user to set the wallet address for")] DiscordUser user, [Option("wallet-address", "The Ethereum wallet address to set")] string walletAddress)
     {
+        // Check if the user has permission
+        if (!_botService.HasPermission(ctx.User))
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            return;
+        }
+
         if (!ValidationUtils.IsValidEthereumAddress(walletAddress))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The wallet address '{walletAddress}' is not valid", $"Please enter a valid Ethereum wallet address");
@@ -55,6 +79,13 @@ public class ProfileCommandsServer : ApplicationCommandModule
     [SlashCommand("view-user-wallet", "View the wallet address of another user.")]
     public async Task ViewUserWalletCommand(InteractionContext ctx, [Option("user", "The user to view the wallet address for")] DiscordUser user)
     {
+        // Check if the user has permission
+        if (!_botService.HasPermission(ctx.User))
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            return;
+        }
+
         var profile = await _profileService.GetUserProfile(user.Id.ToString());
         if (profile == null || String.IsNullOrEmpty(profile.WalletAddress))
         {
@@ -67,6 +98,13 @@ public class ProfileCommandsServer : ApplicationCommandModule
     [SlashCommand("view-user-profile", "View the profile of another user.")]
     public async Task ViewUserProfileCommand(InteractionContext ctx, [Option("user", "The user to view the profile for")] DiscordUser user)
     {
+        // Check if the user has permission
+        if (!_botService.HasPermission(ctx.User))
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            return;
+        }
+
         var profile = await _profileService.GetUserProfileWithPointsByDiscordId(user.Id.ToString());
         if (profile == null)
         {
