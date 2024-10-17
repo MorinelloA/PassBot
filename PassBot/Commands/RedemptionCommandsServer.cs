@@ -131,7 +131,7 @@ namespace PassBot.Commands
             await EmbedUtils.CreateAndSendUserRedemptionsEmbed(ctx, userRedemptions, user);
         }
 
-        [SlashCommand("close-redemption", "Mark a redemption as completed by setting SentBy and SentOn.")]
+        [SlashCommand("close-redemption", "Mark a redemption as completed.")]
         public async Task CloseRedemptionCommand(InteractionContext ctx, [Option("id", "The redemption ID to close")] string redemptionId)
         {
             // Check if the user has permission

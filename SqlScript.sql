@@ -174,6 +174,7 @@ CREATE TABLE [dbo].[UserProfile](
 	[DiscordUsername] [varchar](100) NOT NULL,
 	[Email] [varchar](255) NULL,
 	[WalletAddress] [varchar](255) NULL,
+	[XAccount] [nvarchar](50) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC

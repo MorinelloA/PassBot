@@ -8,6 +8,7 @@ namespace PassBot.Services.Interfaces
         Task<UserProfile> GetUserProfileAsync(string discordId);
         Task SetEmailAsync(DiscordUser user, string email);
         Task SetWalletAddressAsync(DiscordUser user, string walletAddress);
+        Task SetXAccountAsync(DiscordUser user, string xAccount);
         Task<List<UserProfileWithPoints>> GetAllUserProfilesWithPointsAsync();
         Task<UserProfileWithPoints> GetUserProfileWithPointsByDiscordIdAsync(string discordId);
         Task AddProfileChangeLogAsync(ProfileChangeLog changeLog);

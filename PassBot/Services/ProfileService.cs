@@ -22,7 +22,7 @@ namespace PassBot.Services
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "SELECT DiscordId, DiscordUsername, Email, WalletAddress FROM UserProfile WHERE DiscordId = @DiscordId";
+                string query = "SELECT DiscordId, DiscordUsername, Email, WalletAddress, XAccount FROM UserProfile WHERE DiscordId = @DiscordId";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
@@ -38,7 +38,8 @@ namespace PassBot.Services
                                 DiscordId = reader["DiscordId"].ToString(),
                                 DiscordUsername = reader["DiscordUsername"]?.ToString(),
                                 Email = reader["Email"]?.ToString(),
-                                WalletAddress = reader["WalletAddress"]?.ToString()
+                                WalletAddress = reader["WalletAddress"]?.ToString(),
+                                XAccount = reader["XAccount"]?.ToString()
                             };
                         }
                         return null;
@@ -142,6 +143,7 @@ namespace PassBot.Services
                 COALESCE(up.DiscordUsername, p.DiscordUsername) AS DiscordUsername,  -- Prioritize the first non-null username
                 up.Email,
                 up.WalletAddress,
+                up.XAccount,
                 COALESCE(p.Points, 0) AS Points
             FROM UserProfile up
             FULL OUTER JOIN UserPoints p ON up.DiscordId = p.DiscordId";
@@ -160,6 +162,7 @@ namespace PassBot.Services
                                 DiscordUsername = reader["DiscordUsername"]?.ToString(),
                                 Email = reader["Email"]?.ToString(),
                                 WalletAddress = reader["WalletAddress"]?.ToString(),
+                                XAccount = reader["XAccount"]?.ToString(),
                                 Points = Convert.ToInt64(reader["Points"])
                             };
 
@@ -184,6 +187,7 @@ namespace PassBot.Services
                         COALESCE(up.DiscordUsername, p.DiscordUsername) AS DiscordUsername,  -- Prioritize the first non-null username
                         up.Email,
                         up.WalletAddress,
+                        up.XAccount,
                         COALESCE(p.Points, 0) AS Points
                     FROM UserProfile up
                     FULL OUTER JOIN UserPoints p ON up.DiscordId = p.DiscordId
@@ -204,6 +208,7 @@ namespace PassBot.Services
                                 DiscordUsername = reader["DiscordUsername"]?.ToString(),
                                 Email = reader["Email"]?.ToString(),
                                 WalletAddress = reader["WalletAddress"]?.ToString(),
+                                XAccount = reader["XAccount"]?.ToString(),
                                 Points = Convert.ToInt64(reader["Points"])
                             };
                         }
@@ -268,10 +273,10 @@ namespace PassBot.Services
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 string query = @"
-            SELECT TOP 1 ChangedTime
-            FROM ProfileChangeLog
-            WHERE DiscordId = @DiscordId AND ChangedItem = @ItemName
-            ORDER BY ChangedTime DESC";
+                    SELECT TOP 1 ChangedTime
+                    FROM ProfileChangeLog
+                    WHERE DiscordId = @DiscordId AND ChangedItem = @ItemName
+                    ORDER BY ChangedTime DESC";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
@@ -289,6 +294,47 @@ namespace PassBot.Services
             }
 
             return null; // If no record exists, return null
+        }
+
+        public async Task SetXAccountAsync(DiscordUser user, string xAccount)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+                    IF EXISTS (SELECT 1 FROM UserProfile WHERE DiscordId = @DiscordId)
+                    BEGIN
+                        UPDATE UserProfile
+                        SET XAccount = @XAccount, DiscordUsername = @DiscordUsername
+                        WHERE DiscordId = @DiscordId;
+                    END
+                    ELSE
+                    BEGIN
+                        INSERT INTO UserProfile (DiscordId, DiscordUsername, XAccount)
+                        VALUES (@DiscordId, @DiscordUsername, @XAccount);
+                    END";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DiscordId", user.Id.ToString());
+                    command.Parameters.AddWithValue("@DiscordUsername", user.Username);
+                    command.Parameters.AddWithValue("@XAccount", xAccount);
+
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+
+            // Add entry to ProfileChangeLog
+            var changeLog = new ProfileChangeLog
+            {
+                DiscordId = user.Id.ToString(),
+                DiscordUsername = user.Username,
+                ChangedItem = "X Account",
+                ChangedTo = xAccount,
+                ChangedTime = DateTime.UtcNow
+            };
+
+            await AddProfileChangeLogAsync(changeLog);
         }
     }
 }

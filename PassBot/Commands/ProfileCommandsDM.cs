@@ -85,6 +85,43 @@ public class ProfileCommandsDM : ApplicationCommandModule
         await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, ctx.User, profile.WalletAddress, "Wallet Address");
     }
 
+    [SlashCommand("set-x-account", "Sets your X (formerly Twitter) account in your profile.")]
+    public async Task SetXAccountCommand(InteractionContext ctx, [Option("x-account", "Your X account (without the @)")] string xAccount)
+    {
+        // Get the time until the user can update their email again
+        var timeUntilNextChange = await _profileService.GetTimeUntilNextProfileChangeAsync(ctx.User.Id.ToString(), "X Account");
+
+        if (timeUntilNextChange.HasValue)
+        {
+            // Inform the user about the cooldown period remaining
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Cooldown Active",
+                $"You cannot change your X account yet. Please wait {timeUntilNextChange.Value.Days} days, {timeUntilNextChange.Value.Hours} hours.");
+            return;
+        }
+
+        // Ensure no '@' symbol is used
+        if (xAccount.Contains("@"))
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Invalid Format", "Please provide your X account without the '@' symbol.");
+            return;
+        }
+
+        await _profileService.SetXAccountAsync(ctx.User, xAccount);
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your X account has been updated to {xAccount}");
+    }
+
+    [SlashCommand("view-x-account", "View your X account.")]
+    public async Task ViewXAccountCommand(InteractionContext ctx)
+    {
+        var profile = await _profileService.GetUserProfileAsync(ctx.User.Id.ToString());
+        if (profile == null || String.IsNullOrEmpty(profile.XAccount))
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No X Account Found", $"It looks like you haven't set an x account yet! Use `/set-x-account` to add your X account to your profile.");
+            return;
+        }
+        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, ctx.User, profile.XAccount, "X Account");
+    }
+
     [SlashCommand("view-profile", "View your profile.")]
     public async Task ViewProfileCommand(InteractionContext ctx)
     {

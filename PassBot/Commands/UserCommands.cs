@@ -1,7 +1,4 @@
-﻿using DSharpPlus.Entities;
-using DSharpPlus.SlashCommands;
-using PassBot.Services;
-using PassBot.Services.Interfaces;
+﻿using DSharpPlus.SlashCommands;
 using PassBot.Utilities;
 
 public class UserCommands : ApplicationCommandModule

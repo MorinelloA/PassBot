@@ -82,6 +82,7 @@ namespace PassBot.Utilities
             // Display each field on a separate line
             embed.AddField("Email", string.IsNullOrEmpty(profile.Email) ? "Not set" : profile.Email, false);
             embed.AddField("Wallet Address", string.IsNullOrEmpty(profile.WalletAddress) ? "Not set" : profile.WalletAddress, false);
+            embed.AddField("X Account", string.IsNullOrEmpty(profile.XAccount) ? "Not set" : profile.XAccount, false);
             embed.AddField("Points Balance", $"{profile.Points} points", false);
 
             // Use the recipient's avatar as the thumbnail
