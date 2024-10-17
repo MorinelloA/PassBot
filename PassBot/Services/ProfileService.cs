@@ -18,7 +18,7 @@ namespace PassBot.Services
             _profileChangeCooldownDays = configuration.GetValue<int>("ProfileChangeCooldownDays");
         }
 
-        public async Task<UserProfile> GetUserProfile(string discordId)
+        public async Task<UserProfile> GetUserProfileAsync(string discordId)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -47,7 +47,7 @@ namespace PassBot.Services
             }
         }
 
-        public async Task SetEmail(DiscordUser user, string email)
+        public async Task SetEmailAsync(DiscordUser user, string email)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -87,7 +87,7 @@ namespace PassBot.Services
             await AddProfileChangeLogAsync(changeLog);
         }
 
-        public async Task SetWalletAddress(DiscordUser user, string walletAddress)
+        public async Task SetWalletAddressAsync(DiscordUser user, string walletAddress)
         {
             
 
@@ -129,7 +129,7 @@ namespace PassBot.Services
             await AddProfileChangeLogAsync(changeLog);
         }
 
-        public async Task<List<UserProfileWithPoints>> GetAllUserProfilesWithPoints()
+        public async Task<List<UserProfileWithPoints>> GetAllUserProfilesWithPointsAsync()
         {
             var profiles = new List<UserProfileWithPoints>();
 
@@ -172,7 +172,7 @@ namespace PassBot.Services
             return profiles;
         }
 
-        public async Task<UserProfileWithPoints> GetUserProfileWithPointsByDiscordId(string discordId)
+        public async Task<UserProfileWithPoints> GetUserProfileWithPointsByDiscordIdAsync(string discordId)
         {
             UserProfileWithPoints profile = null;
 

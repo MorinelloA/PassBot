@@ -4,6 +4,6 @@ namespace PassBot.Services.Interfaces
 {
     public interface ISpreadsheetService
     {
-        Task<MemoryStream> GenerateUserReport(List<UserProfileWithPoints> users);
+        Task<MemoryStream> GenerateUserReportAsync(List<UserProfileWithPoints> users);
     }
 }

@@ -14,7 +14,7 @@ namespace PassBot.Services
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
-        public async Task<MemoryStream> GenerateUserReport(List<UserProfileWithPoints> users)
+        public async Task<MemoryStream> GenerateUserReportAsync(List<UserProfileWithPoints> users)
         {
             var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("User Report");

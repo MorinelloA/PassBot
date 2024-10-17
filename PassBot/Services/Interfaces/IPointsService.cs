@@ -4,18 +4,15 @@ namespace PassBot.Services.Interfaces
 {
     public interface IPointsService
     {
-        Task<long> GetPointsToAssign(long? pointsToAdd, string category);
-        Task UpdatePoints(DiscordUser assigner, DiscordUser user, long points, string message);
-        Task AddPoints(string discordId, string discordUsername, long points);
-        Task<long> GetUserPoints(string discordId);
-        Task LogPointsAssignment(string discordId, string discordUsername, string assignerId, string assignerUsername, long points, string message = null);
-        Task TruncateUserPointsTable(string removerDiscordId);
-
-
-
-        Task<(bool IsAllowed, TimeSpan? RemainingTime)> CanCheckIn(string discordId);
-        Task CheckInUser(string discordId, string discordUsername);
-        Task<DateTime?> GetLastCheckIn(string discordId);
-        Task UpdateCheckInTime(string discordId, string discordUsername);
+        Task<long> GetPointsToAssignAsync(long? pointsToAdd, string category);
+        Task UpdatePointsAsync(DiscordUser assigner, DiscordUser user, long points, string message);
+        Task AddPointsAsync(string discordId, string discordUsername, long points);
+        Task<long> GetUserPointsAsync(string discordId);
+        Task LogPointsAssignmentAsync(string discordId, string discordUsername, string assignerId, string assignerUsername, long points, string message = null);
+        Task TruncateUserPointsTableAsync(string removerDiscordId);
+        Task<(bool IsAllowed, TimeSpan? RemainingTime)> CanCheckInAsync(string discordId);
+        Task CheckInUserAsync(string discordId, string discordUsername);
+        Task<DateTime?> GetLastCheckInAsync(string discordId);
+        Task UpdateCheckInTimeAsync(string discordId, string discordUsername);
     }
 }

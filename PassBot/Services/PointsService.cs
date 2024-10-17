@@ -26,7 +26,7 @@ namespace PassBot.Services
                );
         }
 
-        public async Task<long> GetPointsToAssign(long? pointsToAdd, string category)
+        public async Task<long> GetPointsToAssignAsync(long? pointsToAdd, string category)
         {
             if (pointsToAdd.HasValue)
                 return pointsToAdd.Value;
@@ -37,7 +37,7 @@ namespace PassBot.Services
             return 0; // Invalid input
         }
 
-        public async Task UpdatePoints(DiscordUser assigner, DiscordUser user, long points, string message)
+        public async Task UpdatePointsAsync(DiscordUser assigner, DiscordUser user, long points, string message)
         {
             var discordId = user.Id.ToString();
             var discordUsername = user.Discriminator == "0" ? user.Username : $"{user.Username}#{user.Discriminator}";
@@ -45,11 +45,11 @@ namespace PassBot.Services
             var assignerId = assigner.Id.ToString();
             var assignerUsername = assigner.Discriminator == "0" ? assigner.Username : $"{assigner.Username}#{assigner.Discriminator}";
 
-            await AddPoints(discordId, discordUsername, points);
-            await LogPointsAssignment(discordId, discordUsername, assignerId, assignerUsername, points, message);
+            await AddPointsAsync(discordId, discordUsername, points);
+            await LogPointsAssignmentAsync(discordId, discordUsername, assignerId, assignerUsername, points, message);
         }
 
-        public async Task AddPoints(string discordId, string discordUsername, long points)
+        public async Task AddPointsAsync(string discordId, string discordUsername, long points)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -77,7 +77,7 @@ namespace PassBot.Services
             }
         }
 
-        public async Task<long> GetUserPoints(string discordId)
+        public async Task<long> GetUserPointsAsync(string discordId)
         {
             long points = 0;
             using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -99,7 +99,7 @@ namespace PassBot.Services
             return points;
         }
 
-        public async Task LogPointsAssignment(string discordId, string discordUsername, string assignerId, string assignerUsername, long points, string message = null)
+        public async Task LogPointsAssignmentAsync(string discordId, string discordUsername, string assignerId, string assignerUsername, long points, string message = null)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -126,9 +126,9 @@ namespace PassBot.Services
             }
         }
 
-        public async Task<(bool IsAllowed, TimeSpan? RemainingTime)> CanCheckIn(string discordId)
+        public async Task<(bool IsAllowed, TimeSpan? RemainingTime)> CanCheckInAsync(string discordId)
         {
-            var lastCheckIn = await GetLastCheckIn(discordId);
+            var lastCheckIn = await GetLastCheckInAsync(discordId);
 
             if (lastCheckIn != null && DateTime.UtcNow < lastCheckIn.Value.AddHours(23))
             {
@@ -140,19 +140,19 @@ namespace PassBot.Services
             return (true, null);
         }
 
-        public async Task CheckInUser(string discordId, string discordUsername)
+        public async Task CheckInUserAsync(string discordId, string discordUsername)
         {
             // Add points for check-in
-            await AddPoints(discordId, discordUsername, _checkInPoints);
+            await AddPointsAsync(discordId, discordUsername, _checkInPoints);
 
             // Log points assignment
-            await LogPointsAssignment(discordId, discordUsername, discordId, discordUsername, _checkInPoints, "Check-In");
+            await LogPointsAssignmentAsync(discordId, discordUsername, discordId, discordUsername, _checkInPoints, "Check-In");
 
             // Update the check-in time for the user
-            await UpdateCheckInTime(discordId, discordUsername);
+            await UpdateCheckInTimeAsync(discordId, discordUsername);
         }
 
-        public async Task<DateTime?> GetLastCheckIn(string discordId)
+        public async Task<DateTime?> GetLastCheckInAsync(string discordId)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -172,7 +172,7 @@ namespace PassBot.Services
             }
         }
 
-        public async Task UpdateCheckInTime(string discordId, string discordUsername)
+        public async Task UpdateCheckInTimeAsync(string discordId, string discordUsername)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -200,7 +200,7 @@ namespace PassBot.Services
         }
 
 
-        public async Task TruncateUserPointsTable(string removerDiscordId)
+        public async Task TruncateUserPointsTableAsync(string removerDiscordId)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
