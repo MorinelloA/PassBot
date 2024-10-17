@@ -57,7 +57,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
     }
 
     [SlashCommand("set-user-wallet-address", "Set the wallet address of a specified user.")]
-    public async Task SetUserWalletAddressCommand(InteractionContext ctx, [Option("user", "The user to set the wallet address for")] DiscordUser user, [Option("wallet-address", "The Ethereum wallet address to set")] string walletAddress)
+    public async Task SetUserWalletAddressCommand(InteractionContext ctx, [Option("user", "The user to set the wallet address for")] DiscordUser user, [Option("wallet-address", "The Pass wallet address to set")] string walletAddress)
     {
         // Check if the user has permission
         if (!_botService.HasPermission(ctx.User))
@@ -68,7 +68,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
 
         if (!ValidationUtils.IsValidEthereumAddress(walletAddress))
         {
-            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The wallet address '{walletAddress}' is not valid", $"Please enter a valid Ethereum wallet address");
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The wallet address '{walletAddress}' is not valid", $"Please enter a valid Pass wallet address");
             return;
         }
 

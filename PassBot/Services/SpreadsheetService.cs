@@ -22,8 +22,9 @@ namespace PassBot.Services
             worksheet.Cell(1, 1).Value = "Discord Id";
             worksheet.Cell(1, 2).Value = "Discord Username";
             worksheet.Cell(1, 3).Value = "Email";
-            worksheet.Cell(1, 4).Value = "Ethereum Address";
-            worksheet.Cell(1, 5).Value = "Points Balance";
+            worksheet.Cell(1, 4).Value = "Wallet Address";
+            worksheet.Cell(1, 5).Value = "X Account";
+            worksheet.Cell(1, 6).Value = "Points Balance";
 
             int currentRow = 2;
             foreach (var user in users)
@@ -32,7 +33,8 @@ namespace PassBot.Services
                 worksheet.Cell(currentRow, 2).Value = user.DiscordUsername ?? "Not set";
                 worksheet.Cell(currentRow, 3).Value = user.Email ?? "Not set";
                 worksheet.Cell(currentRow, 4).Value = user.WalletAddress ?? "Not set";
-                worksheet.Cell(currentRow, 5).Value = user.Points;
+                worksheet.Cell(currentRow, 5).Value = user.XAccount ?? "Not set";
+                worksheet.Cell(currentRow, 6).Value = user.Points;
                 currentRow++;
             }
 

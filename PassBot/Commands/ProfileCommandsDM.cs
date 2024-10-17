@@ -50,7 +50,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
     }
 
     [SlashCommand("set-wallet-address", "Set your Pass wallet address.")]
-    public async Task SetWalletAddressCommand(InteractionContext ctx, [Option("wallet-address", "Your Ethereum wallet address")] string walletAddress)
+    public async Task SetWalletAddressCommand(InteractionContext ctx, [Option("wallet-address", "Your Pass wallet address")] string walletAddress)
     {
         // Get the time until the user can update their email again
         var timeUntilNextChange = await _profileService.GetTimeUntilNextProfileChangeAsync(ctx.User.Id.ToString(), "Wallet Address");
@@ -65,7 +65,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
 
         if (!ValidationUtils.IsValidEthereumAddress(walletAddress))
         {
-            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The wallet address '{walletAddress}' is not valid", $"Please enter a valid Ethereum wallet address");
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The wallet address '{walletAddress}' is not valid", $"Please enter a valid Pass wallet address");
             return;
         }
 
