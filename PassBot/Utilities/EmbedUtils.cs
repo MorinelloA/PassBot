@@ -6,12 +6,12 @@ namespace PassBot.Utilities
 {
     public static class EmbedUtils
     {
-        public static async Task CreateAndSendUpdatePointsEmbed(InteractionContext ctx, DiscordUser user, long points, long totalPoints, string message = "")
+        public static async Task CreateAndSendUpdatePointsEmbed(InteractionContext ctx, DiscordUser user, long points, long totalPoints, string message = "", bool ephemeral = false)
         {
             // Create the base description for the points response
             string description = points > 0
-                ? $"{points} points added to {user.Mention}"
-                : $"{-points} points removed from {user.Mention}";
+                ? $"{points} points added to {user.Username}"
+                : $"{-points} points removed from {user.Username}";
 
             // If a message is provided, append it below the description
             if (!string.IsNullOrEmpty(message))
@@ -33,12 +33,52 @@ namespace PassBot.Utilities
             // Add the user's avatar to the embed
             embed.WithThumbnail(user.AvatarUrl);
 
-            // Send the embed response
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder()
-                .AddEmbed(embed));
+            // Send a notification message mentioning the user first
+            await ctx.Channel.SendMessageAsync(points > 0 ? $"{user.Mention}, you have earned points!" : $"{user.Mention}, you have lost points :(");
+
+            // Then send the embed as a follow-up
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
+
         }
 
-        public static async Task CreateAndSendViewPointsEmbed(InteractionContext ctx, DiscordUser user, long points)
+
+
+        /*public static async Task CreateAndSendUpdatePointsEmbed(InteractionContext ctx, DiscordUser user, long points, long totalPoints, string message = "")
+        {
+            // Create the base description for the points response
+            string description = points > 0
+                ? $"{points} points added to {user.Mention}"
+                : $"{-points} points removed from {user.Mention}";
+
+            // If a message is provided, append it below the description
+            if (!string.IsNullOrEmpty(message))
+            {
+                description = $"**{message}**\n{description}";
+            }
+
+            await ctx.CreateResponseAsync($"{user.Mention}, you have been assigned points!");
+
+            // Create an embed builder for the points response
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = points > 0 ? "Points Added" : "Points Removed",
+                Description = description,
+                Color = DiscordColor.Azure // You can customize the color here
+            };
+
+            // Add additional fields for balance or any other info you want to include
+            embed.AddField("Balance", $"{totalPoints} points", true);
+
+            // Add the user's avatar to the embed
+            embed.WithThumbnail(user.AvatarUrl);
+
+            // Send the embed response
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder()
+                .AddEmbed(embed));
+        }*/
+
+
+        public static async Task CreateAndSendViewPointsEmbed(InteractionContext ctx, DiscordUser user, long points, bool ephemeral = true)
         {
             // Create an embed builder for the points response
             var embed = new DiscordEmbedBuilder
@@ -52,11 +92,10 @@ namespace PassBot.Utilities
             embed.WithThumbnail(user.AvatarUrl);
 
             // Send the embed response
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder()
-                .AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
-        public static async Task CreateAndSendProfileFieldEmbed(InteractionContext ctx, DiscordUser user, string value, string field)
+        public static async Task CreateAndSendProfileFieldEmbed(InteractionContext ctx, DiscordUser user, string value, string field, bool ephemeral = true)
         {
             var embed = new DiscordEmbedBuilder
             {
@@ -68,10 +107,10 @@ namespace PassBot.Utilities
             // Use the recipient's avatar as the thumbnail
             embed.WithThumbnail(user.AvatarUrl);
 
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
-        public static async Task CreateAndSendFullProfileEmbed(InteractionContext ctx, DiscordUser user, UserProfileWithPoints profile)
+        public static async Task CreateAndSendFullProfileEmbed(InteractionContext ctx, DiscordUser user, UserProfileWithPoints profile, bool ephemeral = true)
         {
             var embed = new DiscordEmbedBuilder
             {
@@ -88,14 +127,15 @@ namespace PassBot.Utilities
             // Use the recipient's avatar as the thumbnail
             embed.WithThumbnail(user.AvatarUrl);
 
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
-        public static async Task CreateAndSendCheckInEmbed(InteractionContext ctx, long totalBalance)
+
+        public static async Task CreateAndSendCheckInEmbed(InteractionContext ctx, long checkInPoints, long totalBalance, bool ephemeral = false)
         {
             var embed = new DiscordEmbedBuilder
             {
                 Title = "Check-in Successful",
-                Description = $"{ctx.User.Mention} has checked in and received 5 points!",
+                Description = $"{ctx.User.Mention} has checked in and received {checkInPoints} points!",
                 Color = DiscordColor.Green
             };
 
@@ -106,19 +146,75 @@ namespace PassBot.Utilities
             embed.WithThumbnail(ctx.User.AvatarUrl);
 
             // Respond with the embed message
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
-        public static async Task CreateAndSendWarningEmbed(InteractionContext ctx, string title, string description)
+        /*
+        public static async Task CreateAndSendCheckInIteratorEmbed(InteractionContext ctx, CheckInHelper cih, bool ephemeral = false)
+        {
+            int overallNeededCheckins = cih.overallNeededCheckins;
+
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = "Check-in Successful",
+                Description = $"{ctx.User.Mention} has checked in {cih.currentIterator} time(s).",
+                Color = DiscordColor.Green
+            };
+
+            // Display the user's updated balance
+            embed.AddField($"Check-ins until {cih.pointsCanEarn} points", $"{cih.checkinsToPoints}", true);
+
+            // Use the user's avatar as the thumbnail
+            embed.WithThumbnail(ctx.User.AvatarUrl);
+
+            // Respond with the embed message
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
+        }
+        */
+
+        
+        public static async Task CreateAndSendCheckInIteratorEmbed(InteractionContext ctx, CheckInHelper cih, bool ephemeral = false)
+        {
+            int overallNeededCheckins = cih.overallNeededCheckins;
+            int currentCheckins = cih.currentIterator;
+
+            // Calculate progress percentage
+            double progressPercentage = (double)currentCheckins / overallNeededCheckins;
+
+            // Create a progress bar out of 10 blocks (e.g. "█████░░░░░")
+            int progressBlocks = (int)(progressPercentage * 10);
+            string progressBar = new string('█', progressBlocks) + new string('░', 10 - progressBlocks);
+
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = "Check-in Successful",
+                Description = currentCheckins == 1 ? $"{ctx.User.Mention} has checked in {currentCheckins} time." : $"{ctx.User.Mention} has checked in {currentCheckins} times.",
+                Color = DiscordColor.Green
+            };
+
+            // Add the progress bar
+            embed.AddField($"Progress to {cih.pointsCanEarn} points", $"{progressBar} ({currentCheckins}/{overallNeededCheckins} check-ins)", true);
+
+            // Display the user's updated balance and how many check-ins are needed
+            //embed.AddField($"Check-ins until {cih.pointsCanEarn} points", $"{cih.checkinsToPoints}", true);
+
+            // Use the user's avatar as the thumbnail
+            embed.WithThumbnail(ctx.User.AvatarUrl);
+
+            // Respond with the embed message
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
+        }
+
+        public static async Task CreateAndSendWarningEmbed(InteractionContext ctx, string title, string description, bool ephemeral = true)
         {
             var embed = CreateWarningEmbed(title, description);
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
-        public static async Task CreateAndSendSuccessEmbed(InteractionContext ctx, string title, string description)
+        public static async Task CreateAndSendSuccessEmbed(InteractionContext ctx, string title, string description, bool ephemeral = false)
         {
             var embed = CreateSuccessEmbed(title, description);
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
         public static DiscordEmbedBuilder CreateSuccessEmbed(string title, string description)
@@ -141,7 +237,7 @@ namespace PassBot.Utilities
             };
         }
 
-        public static async Task CreateAndSendItemsListEmbed(InteractionContext ctx, List<Item> items)
+        public static async Task CreateAndSendItemsListEmbed(InteractionContext ctx, List<Item> items, bool ephemeral = false)
         {
             // Create an embed builder
             var embed = new DiscordEmbedBuilder
@@ -158,11 +254,10 @@ namespace PassBot.Utilities
             }
 
             // Send the embed response
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder()
-                .AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
-        public static async Task CreateAndSendOpenRedemptionsEmbed(InteractionContext ctx, List<Redemption> openRedemptions)
+        public static async Task CreateAndSendOpenRedemptionsEmbed(InteractionContext ctx, List<Redemption> openRedemptions, bool ephemeral = true)
         {
             // Check if there are any open redemptions
             if (openRedemptions == null || !openRedemptions.Any())
@@ -190,10 +285,10 @@ namespace PassBot.Utilities
             }
 
             // Send the embed
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
-        public static async Task CreateAndSendUserRedemptionsEmbed(InteractionContext ctx, List<Redemption> userRedemptions, DiscordUser user)
+        public static async Task CreateAndSendUserRedemptionsEmbed(InteractionContext ctx, List<Redemption> userRedemptions, DiscordUser user, bool ephemeral = true)
         {
             // Check if the user has any redemptions
             if (userRedemptions == null || !userRedemptions.Any())
@@ -222,10 +317,10 @@ namespace PassBot.Utilities
             }
 
             // Send the embed
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
-        public static async Task CreateAndSendCommandListEmbed(InteractionContext ctx, List<(string Command, string Description)> commands)
+        public static async Task CreateAndSendCommandListEmbed(InteractionContext ctx, List<(string Command, string Description)> commands, bool ephemeral = false)
         {
             var embed = new DiscordEmbedBuilder
             {
@@ -241,7 +336,7 @@ namespace PassBot.Utilities
             }
 
             // Send the embed response
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed));
+            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
         public static List<(string Command, string Description)> GetAvailableCommands()

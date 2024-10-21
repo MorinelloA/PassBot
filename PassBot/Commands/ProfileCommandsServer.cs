@@ -34,7 +34,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
         }
 
         await _profileService.SetEmailAsync(user, email);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s email address has been updated to {email}");
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s email address has been updated to {email}", true);
     }
 
     [SlashCommand("view-user-email", "View the email address of a specified user.")]
@@ -53,7 +53,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No Email Found", $"It looks like this user hasn't set an email address yet! Use `/set-user-email` to add an email to their profile");
             return;
         }
-        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, user, profile.Email, "Email");
+        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, user, profile.Email, "Email", true);
     }
 
     [SlashCommand("set-user-wallet-address", "Set the wallet address of a specified user.")]
@@ -73,7 +73,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
         }
 
         await _profileService.SetWalletAddressAsync(user, walletAddress);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s wallet address has been updated to {walletAddress}");
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s wallet address has been updated to {walletAddress}", true);
     }
 
     [SlashCommand("view-user-wallet", "View the wallet address of a specified user.")]
@@ -92,7 +92,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No Wallet Found", $"It looks like this user hasn't set an wallet address yet! Use `/set-user-wallet` to add a wallet to their profile.");
             return;
         }
-        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, user, profile.WalletAddress, "Wallet Address");
+        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, user, profile.WalletAddress, "Wallet Address", true);
     }
 
     [SlashCommand("set-user-x-account", "Set the X account of a specified user.")]
@@ -113,7 +113,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
         }
 
         await _profileService.SetXAccountAsync(user, xAccount);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s X account has been updated to {xAccount}");
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s X account has been updated to {xAccount}", true);
     }
 
     [SlashCommand("view-user-x-account", "View the X account of a specified user.")]
@@ -132,7 +132,7 @@ public class ProfileCommandsServer : ApplicationCommandModule
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No X Account Found", $"It looks like this user hasn't set an X account yet! Use `/set-user-x-account` to add an X account to their profile.");
             return;
         }
-        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, user, profile.XAccount, "X Account");
+        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, user, profile.XAccount, "X Account", true);
     }
 
     [SlashCommand("view-user-profile", "View the profile of a specified user.")]
@@ -152,6 +152,6 @@ public class ProfileCommandsServer : ApplicationCommandModule
             return;
         }
 
-        await EmbedUtils.CreateAndSendFullProfileEmbed(ctx, user, profile);
+        await EmbedUtils.CreateAndSendFullProfileEmbed(ctx, user, profile, true);
     }
 }

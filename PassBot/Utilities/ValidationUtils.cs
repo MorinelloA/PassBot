@@ -1,4 +1,6 @@
-﻿namespace PassBot.Utilities
+﻿using System.Text.RegularExpressions;
+
+namespace PassBot.Utilities
 {
     public static class ValidationUtils
     {
@@ -26,6 +28,17 @@
             {
                 return false;
             }
+        }
+
+        public static string NormalizeText(string input)
+        {
+            // Convert to lowercase
+            string normalized = input.ToLowerInvariant();
+
+            // Remove all non-alphanumeric characters
+            normalized = Regex.Replace(normalized, @"[^\w\s]", "");
+
+            return normalized;
         }
     }
 }

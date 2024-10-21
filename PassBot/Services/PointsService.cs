@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using PassBot.Models;
 using PassBot.Services.Interfaces;
+using System.Runtime.CompilerServices;
 
 namespace PassBot.Services
 {
@@ -10,12 +11,14 @@ namespace PassBot.Services
     {
         private readonly string _connectionString;
         private readonly long _checkInPoints;
+        private readonly int _checkInTimes;
         private readonly Dictionary<PointCategory, long> _pointCategories;
 
         public PointsService(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
             _checkInPoints = configuration.GetValue<long>("CheckInPoints");
+            _checkInTimes = configuration.GetValue<int>("CheckInTimes");
 
             _pointCategories = configuration.GetSection("PointCategories")
                .Get<Dictionary<string, long>>()
@@ -126,75 +129,81 @@ namespace PassBot.Services
             }
         }
 
-        public async Task<(bool IsAllowed, TimeSpan? RemainingTime)> CanCheckInAsync(string discordId)
+        //Returns whether the user earned points or not
+        public async Task<CheckInHelper> CheckInUserAsync(string discordId, string discordUsername, CheckInLog? checkInLog)
         {
-            var lastCheckIn = await GetLastCheckInAsync(discordId);
+            CheckInHelper helper = new CheckInHelper();
+            helper.overallNeededCheckins = _checkInTimes;
+            helper.pointsCanEarn = _checkInPoints;
 
-            if (lastCheckIn != null && DateTime.UtcNow < lastCheckIn.Value.AddHours(23))
+            if (_checkInTimes <= 1 || (checkInLog != null && _checkInTimes <= checkInLog.CheckInIterator + 1))
             {
-                // Calculate remaining time until they can check in again
-                var remainingTime = lastCheckIn.Value.AddHours(23) - DateTime.UtcNow;
-                return (false, remainingTime);
+                // Add points for check-in
+                await AddPointsAsync(discordId, discordUsername, _checkInPoints);
+
+                // Log points assignment
+                await LogPointsAssignmentAsync(discordId, discordUsername, discordId, discordUsername, _checkInPoints, "Check-In");
+
+                await ResetCheckInTimeAsync(discordId, discordUsername);
+
+                helper.didEarnPoints = true;
+                helper.pointsEarned = _checkInPoints;
+                helper.currentIterator = 0;
+                helper.checkinsToPoints = _checkInTimes;
+            }
+            else
+            {
+                // Update the check-in time for the user
+                await UpdateCheckInTimeAsync(discordId, discordUsername);
+
+                helper.didEarnPoints = false;
+                helper.pointsEarned = 0;
+                helper.currentIterator = checkInLog == null ? 1 : checkInLog.CheckInIterator + 1;
+                helper.checkinsToPoints = _checkInTimes - helper.currentIterator;
             }
 
-            return (true, null);
+            return helper;
         }
 
-        public async Task CheckInUserAsync(string discordId, string discordUsername)
-        {
-            // Add points for check-in
-            await AddPointsAsync(discordId, discordUsername, _checkInPoints);
 
-            // Log points assignment
-            await LogPointsAssignmentAsync(discordId, discordUsername, discordId, discordUsername, _checkInPoints, "Check-In");
-
-            // Update the check-in time for the user
-            await UpdateCheckInTimeAsync(discordId, discordUsername);
-        }
-
-        public async Task<DateTime?> GetLastCheckInAsync(string discordId)
+        public async Task<CheckInLog?> GetLastCheckInAsync(string discordId)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "SELECT LastCheckIn FROM CheckInLog WHERE DiscordId = @DiscordId";
+                string query = @"SELECT Id, DiscordId, LastCheckIn, DiscordUsername, CheckInIterator FROM CheckInLog WHERE DiscordId = @DiscordId";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@DiscordId", discordId);
                     await connection.OpenAsync();
 
-                    var result = await command.ExecuteScalarAsync();
-                    if (result != null)
+                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
                     {
-                        return Convert.ToDateTime(result);
+                        if (await reader.ReadAsync())
+                        {
+                            var lastCheckIn = new CheckInLog
+                            {
+                                Id = Convert.ToInt64(reader["Id"]),
+                                DiscordId = reader["DiscordId"].ToString(),
+                                LastCheckIn = Convert.ToDateTime(reader["LastCheckIn"]),
+                                DiscordUsername = reader["DiscordUsername"]?.ToString(),
+                                CheckInIterator = Convert.ToInt32(reader["CheckInIterator"])
+                            };
+
+                            if (lastCheckIn != null && DateTime.UtcNow < lastCheckIn.LastCheckIn.AddHours(23))
+                            {
+                                lastCheckIn.IsAllowed = false;
+                                // Calculate remaining time until they can check in again
+                                lastCheckIn.RemainingTime = lastCheckIn.LastCheckIn.AddHours(23) - DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                lastCheckIn.IsAllowed = true;
+                            }
+
+                            return lastCheckIn;
+                        }
+                        return null;
                     }
-                    return null;
-                }
-            }
-        }
-
-        public async Task UpdateCheckInTimeAsync(string discordId, string discordUsername)
-        {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                string query = @"
-            IF EXISTS (SELECT 1 FROM CheckInLog WHERE DiscordId = @DiscordId)
-            BEGIN
-                UPDATE CheckInLog
-                SET LastCheckIn = GETUTCDATE(), DiscordUsername = @DiscordUsername
-                WHERE DiscordId = @DiscordId;
-            END
-            ELSE
-            BEGIN
-                INSERT INTO CheckInLog (DiscordId, DiscordUsername, LastCheckIn)
-                VALUES (@DiscordId, @DiscordUsername, GETUTCDATE());
-            END";
-
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@DiscordId", discordId);
-                    command.Parameters.AddWithValue("@DiscordUsername", discordUsername);
-                    await connection.OpenAsync();
-                    await command.ExecuteNonQueryAsync();
                 }
             }
         }
@@ -250,6 +259,52 @@ namespace PassBot.Services
             return logs;
         }
 
+        public async Task ResetCheckInTimeAsync(string discordId, string discordUsername)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+            
+                UPDATE CheckInLog
+                SET LastCheckIn = GETUTCDATE(), DiscordUsername = @DiscordUsername, CheckInIterator = 0
+                WHERE DiscordId = @DiscordId;";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DiscordId", discordId);
+                    command.Parameters.AddWithValue("@DiscordUsername", discordUsername);
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        public async Task UpdateCheckInTimeAsync(string discordId, string discordUsername)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+            IF EXISTS (SELECT 1 FROM CheckInLog WHERE DiscordId = @DiscordId)
+            BEGIN
+                UPDATE CheckInLog
+                SET LastCheckIn = GETUTCDATE(), DiscordUsername = @DiscordUsername, CheckInIterator = CheckInIterator + 1
+                WHERE DiscordId = @DiscordId;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO CheckInLog (DiscordId, DiscordUsername, CheckInIterator, LastCheckIn)
+                VALUES (@DiscordId, @DiscordUsername, 1, GETUTCDATE());
+            END";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DiscordId", discordId);
+                    command.Parameters.AddWithValue("@DiscordUsername", discordUsername);
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
 
         public async Task TruncateUserPointsTableAsync(string removerDiscordId)
         {

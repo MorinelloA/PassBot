@@ -62,6 +62,10 @@ discord.Ready += async (s, e) =>
     Console.WriteLine("Bot is connected and ready.");
 };
 
+// Initialize BotService and register message monitoring
+var botService = serviceProvider.GetRequiredService<IBotService>();
+botService.RegisterMessageMonitoring();
+
 var slash = discord.UseSlashCommands(new SlashCommandsConfiguration
 {
     Services = serviceProvider // Pass the service provider for dependency injection

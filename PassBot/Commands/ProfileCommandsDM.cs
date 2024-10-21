@@ -34,7 +34,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
         }
 
         await _profileService.SetEmailAsync(ctx.User, email);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your email has been set to {email}");
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your email has been set to {email}", true);
     }
 
     [SlashCommand("view-email", "View your email address.")]
@@ -46,7 +46,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No Email Found", $"It looks like you haven't set an email address yet! Use `/set-email` to add your email to your profile");
             return;
         }
-        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, ctx.User, profile.Email, "Email");
+        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, ctx.User, profile.Email, "Email", true);
     }
 
     [SlashCommand("set-wallet-address", "Set your Pass wallet address.")]
@@ -70,7 +70,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
         }
 
         await _profileService.SetWalletAddressAsync(ctx.User, walletAddress);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your wallet address has been updated to {walletAddress}");
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your wallet address has been updated to {walletAddress}", true);
     }
 
     [SlashCommand("view-wallet", "View your wallet address.")]
@@ -82,7 +82,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No Wallet Found", $"It looks like you haven't set a wallet address yet! Use `/set-wallet` to add your wallet to your profile.");
             return;
         }
-        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, ctx.User, profile.WalletAddress, "Wallet Address");
+        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, ctx.User, profile.WalletAddress, "Wallet Address", true);
     }
 
     [SlashCommand("set-x-account", "Sets your X (formerly Twitter) account in your profile.")]
@@ -107,7 +107,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
         }
 
         await _profileService.SetXAccountAsync(ctx.User, xAccount);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your X account has been updated to {xAccount}");
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your X account has been updated to {xAccount}", true);
     }
 
     [SlashCommand("view-x-account", "View your X account.")]
@@ -119,7 +119,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "No X Account Found", $"It looks like you haven't set an x account yet! Use `/set-x-account` to add your X account to your profile.");
             return;
         }
-        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, ctx.User, profile.XAccount, "X Account");
+        await EmbedUtils.CreateAndSendProfileFieldEmbed(ctx, ctx.User, profile.XAccount, "X Account", true);
     }
 
     [SlashCommand("view-profile", "View your profile.")]
@@ -132,6 +132,6 @@ public class ProfileCommandsDM : ApplicationCommandModule
             return;
         }
 
-        await EmbedUtils.CreateAndSendFullProfileEmbed(ctx, ctx.User, profile);
+        await EmbedUtils.CreateAndSendFullProfileEmbed(ctx, ctx.User, profile, true);
     }
 }

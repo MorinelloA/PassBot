@@ -2,6 +2,8 @@
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
+using Microsoft.Extensions.Configuration;
+using PassBot.Models;
 using PassBot.Services;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
@@ -12,11 +14,13 @@ namespace PassBot.Commands
     {
         private readonly IBotService _botService;
         private readonly IPointsService _pointsService;
+        private readonly IConfiguration _config;
 
-        public PointsCommandsServer(IBotService botService, IPointsService pointsService)
+        public PointsCommandsServer(IBotService botService, IPointsService pointsService, IConfiguration config)
         {
             _botService = botService;
             _pointsService = pointsService;
+            _config = config;
         }
 
         [SlashCommand("remove-points", "Removes points from a specified user based on their mention.")]
@@ -45,9 +49,16 @@ namespace PassBot.Commands
                 return;
             }
 
-            await _pointsService.UpdatePointsAsync(ctx.User, user, -pointsToRemove, message);
-
             long totalPoints = await _pointsService.GetUserPointsAsync(user.Id.ToString());
+
+            if (totalPoints - pointsToRemove < 0)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"This would give {user.Username} negative points");
+                return;
+            }
+
+            await _pointsService.UpdatePointsAsync(ctx.User, user, -pointsToRemove, message);
+            totalPoints -= pointsToRemove;            
 
             await EmbedUtils.CreateAndSendUpdatePointsEmbed(ctx, user, -pointsToRemove, totalPoints, message);
         }
@@ -110,6 +121,13 @@ namespace PassBot.Commands
                 return;
             }
 
+            long maxPointsAllowed = _config.GetValue<long>("MaxPointsAllowed");
+            if (maxPointsAllowed < points)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"You can not assign this many points at once");
+                return;
+            }
+
             await _pointsService.UpdatePointsAsync(ctx.User, user, points, _message);
 
             long totalPoints = await _pointsService.GetUserPointsAsync(user.Id.ToString());            
@@ -138,22 +156,32 @@ namespace PassBot.Commands
             var discordUsername = ctx.User.Discriminator == "0" ? ctx.User.Username : $"{ctx.User.Username}#{ctx.User.Discriminator}";
 
             // Check if the user can check-in
-            var (isAllowed, remainingTime) = await _pointsService.CanCheckInAsync(discordId);
+            var lastCheckin = await _pointsService.GetLastCheckInAsync(discordId);
 
-            if (!isAllowed && remainingTime.HasValue)
+            if (lastCheckin != null && lastCheckin.IsAllowed == false)
             {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "You have already checked in", $"Please try again in {remainingTime.Value.Hours} hours and {remainingTime.Value.Minutes} minutes");
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "You have already checked in", $"Please try again in {lastCheckin.RemainingTime.Value.Hours} hours and {lastCheckin.RemainingTime.Value.Minutes} minutes");
                 return;
             }
 
+            int checkinsToPoints = _config.GetValue<int>("CheckInTimes");
+            long checkInPoints = _config.GetValue<long>("CheckInPoints");
+
             // Process the check-in and update points
-            await _pointsService.CheckInUserAsync(discordId, discordUsername);
+            CheckInHelper cih = await _pointsService.CheckInUserAsync(discordId, discordUsername, lastCheckin);
+            if (cih.didEarnPoints)
+            {
+                // Get the user's updated points balance
+                long totalBalance = await _pointsService.GetUserPointsAsync(discordId);
 
-            // Get the user's updated points balance
-            long totalBalance = await _pointsService.GetUserPointsAsync(discordId);
-
-            // Use the EmbedUtils method to send the embed
-            await EmbedUtils.CreateAndSendCheckInEmbed(ctx, totalBalance);
+                // Use the EmbedUtils method to send the embed
+                await EmbedUtils.CreateAndSendCheckInEmbed(ctx, checkInPoints, totalBalance);
+            }
+            else
+            {
+                // Use the EmbedUtils method to send the embed
+                await EmbedUtils.CreateAndSendCheckInIteratorEmbed(ctx, cih);
+            }
         }
 
         [SlashCommand("clear-points", "Clears all points from the system.")]

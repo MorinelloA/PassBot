@@ -33,7 +33,8 @@ public class AdminCommands : ApplicationCommandModule
         var stream = await _spreadsheetService.GeneratePointsReportAsync(users);
 
         var response = new DiscordInteractionResponseBuilder()
-            .AddFile("pass_points_report.xlsx", stream);
+            .AddFile("pass_points_report.xlsx", stream)
+            .AsEphemeral(true);
 
         await ctx.CreateResponseAsync(response);
     }
@@ -52,7 +53,8 @@ public class AdminCommands : ApplicationCommandModule
         var stream = await _spreadsheetService.GenerateUserReportAsync(userPointsLog);
 
         var response = new DiscordInteractionResponseBuilder()
-            .AddFile($"{user.Username}_report.xlsx", stream);
+            .AddFile($"{user.Username}_report.xlsx", stream)
+            .AsEphemeral(true);
 
         await ctx.CreateResponseAsync(response);
     }
@@ -67,6 +69,6 @@ public class AdminCommands : ApplicationCommandModule
             return;
         }
 
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", "Server is active!");
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", "Server is active!", true);
     }
 }
