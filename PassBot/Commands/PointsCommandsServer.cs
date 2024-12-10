@@ -149,7 +149,8 @@ namespace PassBot.Commands
             await EmbedUtils.CreateAndSendViewPointsEmbed(ctx, user, points);
         }
 
-        [SlashCommand("check-in", "Check-in to get points. This can only be done once every 23 hours.")]
+        /*
+        [SlashCommand("gm", "This can only be done once every 23 hours. Check-in enough times to earn points!")]
         public async Task CheckIn(InteractionContext ctx)
         {
             var discordId = ctx.User.Id.ToString();
@@ -182,7 +183,7 @@ namespace PassBot.Commands
                 // Use the EmbedUtils method to send the embed
                 await EmbedUtils.CreateAndSendCheckInIteratorEmbed(ctx, cih);
             }
-        }
+        }*/
 
         [SlashCommand("clear-points", "Clears all points from the system.")]
         public async Task ClearPointsCommand(InteractionContext ctx)

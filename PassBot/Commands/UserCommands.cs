@@ -17,14 +17,4 @@ public class UserCommands : ApplicationCommandModule
         // Create and send the embed with the list of commands
         await EmbedUtils.CreateAndSendCommandListEmbed(ctx, availableCommands);
     }
-
-    [SlashCommand("view-admin-commands", "Gives you the list of admin commands you may use.")]
-    public async Task ViewAdminCommandsCommand(InteractionContext ctx)
-    {
-        // Fetch the available commands
-        var availableCommands = EmbedUtils.GetAvailableAdminCommands();
-
-        // Create and send the embed with the list of commands
-        await EmbedUtils.CreateAndSendCommandListEmbed(ctx, availableCommands);
-    }
 }

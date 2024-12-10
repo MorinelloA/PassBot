@@ -343,18 +343,23 @@ namespace PassBot.Utilities
         {
             return new List<(string Command, string Description)>
             {
-                ("view-points", "View your total points."),
-                ("check-in", "Check-in to get points. This can only be done once every 23 hours."),
+                
+                //("gm", "Check-in. This can only be done once every 23 hours."),
 
                 ("view-profile", "Views your profile."),
+                ("view-points", "View your total points."),
                 ("set-email", "Set your email address."),
                 ("view-email", "View your email address."),
                 ("set-wallet-address", "Set your Pass wallet address."),
                 ("view-wallet", "View your Pass wallet address."),
+                ("set-x-account", "Set your X account."),
+                ("view-x-account", "View your X account."),
 
+                /*
                 ("view-items", "View all available items for redemption."),
                 ("redeem-item", "Redeem an item by spending points."),
                 ("view-redemptions", "View all of your redemptions."),
+                */
 
                 ("view-commands", "Shows you the list of commands you may use.")
             };
@@ -374,13 +379,18 @@ namespace PassBot.Utilities
                 ("view-user-email", "View the email address of a specified user."),
                 ("set-user-wallet-address", "Set the wallet address of a specified user."),
                 ("view-user-wallet", "View the total points of a specified user."),
+                ("set-user-x-account", "Set the X account of a specified user."),
+                ("view-user-x-account", "View the X account of a specified user."),
+
                 ("view-user-profile", "Views the profile of a specified user."),
 
+                /*
                 ("add-item", "Add an item for users to redeem."),
                 ("remove-item", "Remove an item by marking it as expired."),
                 ("view-open-redemptions", "View all open (unsent) redemptions."),
                 ("view-user-redemptions", "View all redemptions made by a specific user."),
                 ("close-redemption", "Mark a redemption as completed."),
+                */
 
                 ("generate-points-report", "Generates an .xlsx report of current points for every user and sends it to you."),
                 ("generate-user-report", "Generates an .xlsx report of all point actions for a specific user and sends it to you."),

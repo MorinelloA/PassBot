@@ -11,11 +11,16 @@ namespace PassBot.Services
     {
         private readonly string _connectionString;
         private readonly int _profileChangeCooldownDays;
+        private readonly int _profileAdditionPoints;
 
-        public ProfileService(IConfiguration configuration)
+        private readonly IPointsService _pointsService;
+
+        public ProfileService(IConfiguration configuration, IPointsService pointsService)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
             _profileChangeCooldownDays = configuration.GetValue<int>("ProfileChangeCooldownDays");
+            _profileAdditionPoints = configuration.GetValue<int>("ProfileAdditionPoints");            
+            _pointsService = pointsService;
         }
 
         public async Task<UserProfile> GetUserProfileAsync(string discordId)
@@ -48,22 +53,48 @@ namespace PassBot.Services
             }
         }
 
-        public async Task SetEmailAsync(DiscordUser user, string email)
+        public async Task<bool> AssignPoints(DiscordUser user, string fieldToCheck)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
+                string query = $@"
+                    SELECT CASE 
+                        WHEN NOT EXISTS (SELECT 1 FROM UserProfile WHERE DiscordId = @DiscordId) THEN 1
+                        WHEN (SELECT {fieldToCheck} FROM UserProfile WHERE DiscordId = @DiscordId) IS NULL THEN 1
+                        ELSE 0
+                    END AS ShouldAssignPoints";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DiscordId", user.Id.ToString());
+
+                    await connection.OpenAsync();
+                    var result = await command.ExecuteScalarAsync();
+
+                    return result != null && Convert.ToInt32(result) == 1;
+                }
+            }
+        }
+
+
+        public async Task SetEmailAsync(DiscordUser user, string email)
+        {
+            bool shouldAssignPoints = await AssignPoints(user, "Email");
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
                 string query = @"
-                    IF EXISTS (SELECT 1 FROM UserProfile WHERE DiscordId = @DiscordId)
-                    BEGIN
-                        UPDATE UserProfile
-                        SET Email = @Email, DiscordUsername = @DiscordUsername
-                        WHERE DiscordId = @DiscordId;
-                    END
-                    ELSE
-                    BEGIN
-                        INSERT INTO UserProfile (DiscordId, DiscordUsername, Email)
-                        VALUES (@DiscordId, @DiscordUsername, @Email);
-                    END";
+            IF EXISTS (SELECT 1 FROM UserProfile WHERE DiscordId = @DiscordId)
+            BEGIN
+                UPDATE UserProfile
+                SET Email = @Email, DiscordUsername = @DiscordUsername
+                WHERE DiscordId = @DiscordId;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO UserProfile (DiscordId, DiscordUsername, Email)
+                VALUES (@DiscordId, @DiscordUsername, @Email);
+            END";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
@@ -76,6 +107,7 @@ namespace PassBot.Services
                 }
             }
 
+            // Add entry to ProfileChangeLog
             var changeLog = new ProfileChangeLog
             {
                 DiscordId = user.Id.ToString(),
@@ -86,11 +118,22 @@ namespace PassBot.Services
             };
 
             await AddProfileChangeLogAsync(changeLog);
+
+            // Award points if necessary
+            if (shouldAssignPoints)
+            {
+                var assigner = user;
+                string message = "Profile Email Set";
+                long points = _profileAdditionPoints;
+
+                await _pointsService.UpdatePointsAsync(assigner, user, points, message);
+            }
         }
+
 
         public async Task SetWalletAddressAsync(DiscordUser user, string walletAddress)
         {
-            
+            bool shouldAssignPoints = await AssignPoints(user, "WalletAddress");
 
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
@@ -128,7 +171,19 @@ namespace PassBot.Services
             };
 
             await AddProfileChangeLogAsync(changeLog);
+
+            // Award points if necessary
+            if (shouldAssignPoints)
+            {
+                var assigner = user;
+                string message = "Profile Wallet Set";
+                long points = _profileAdditionPoints;
+
+                await _pointsService.UpdatePointsAsync(assigner, user, points, message);
+            }
         }
+
+
 
         public async Task<List<UserProfileWithPoints>> GetAllUserProfilesWithPointsAsync()
         {
@@ -298,20 +353,22 @@ namespace PassBot.Services
 
         public async Task SetXAccountAsync(DiscordUser user, string xAccount)
         {
+            bool shouldAssignPoints = await AssignPoints(user, "XAccount");
+
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 string query = @"
-                    IF EXISTS (SELECT 1 FROM UserProfile WHERE DiscordId = @DiscordId)
-                    BEGIN
-                        UPDATE UserProfile
-                        SET XAccount = @XAccount, DiscordUsername = @DiscordUsername
-                        WHERE DiscordId = @DiscordId;
-                    END
-                    ELSE
-                    BEGIN
-                        INSERT INTO UserProfile (DiscordId, DiscordUsername, XAccount)
-                        VALUES (@DiscordId, @DiscordUsername, @XAccount);
-                    END";
+            IF EXISTS (SELECT 1 FROM UserProfile WHERE DiscordId = @DiscordId)
+            BEGIN
+                UPDATE UserProfile
+                SET XAccount = @XAccount, DiscordUsername = @DiscordUsername
+                WHERE DiscordId = @DiscordId;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO UserProfile (DiscordId, DiscordUsername, XAccount)
+                VALUES (@DiscordId, @DiscordUsername, @XAccount);
+            END";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
@@ -324,7 +381,6 @@ namespace PassBot.Services
                 }
             }
 
-            // Add entry to ProfileChangeLog
             var changeLog = new ProfileChangeLog
             {
                 DiscordId = user.Id.ToString(),
@@ -335,6 +391,18 @@ namespace PassBot.Services
             };
 
             await AddProfileChangeLogAsync(changeLog);
+
+            // Award points if necessary
+            if (shouldAssignPoints)
+            {
+                var assigner = user;
+                string message = "Profile X Account Set";
+                long points = _profileAdditionPoints;
+
+                await _pointsService.UpdatePointsAsync(assigner, user, points, message);
+            }
         }
+
+
     }
 }
