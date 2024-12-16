@@ -3,6 +3,7 @@ using DSharpPlus.Entities;
 using Microsoft.Extensions.Configuration;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
+using System;
 using System.Text.RegularExpressions;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -12,6 +13,7 @@ namespace PassBot.Services
     {
         private readonly DiscordClient _discordClient;
         private readonly IConfiguration _config;
+        private static readonly Random _random = new Random();
 
         public BotService(DiscordClient discordClient, IConfiguration config)
         {
@@ -77,5 +79,38 @@ namespace PassBot.Services
             };
         }
 
+        public void StartScheduler()
+        {
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    DateTime now = DateTime.UtcNow;
+                    // Check if it's the right time to send
+                    if ((now.DayOfWeek == DayOfWeek.Monday || now.DayOfWeek == DayOfWeek.Wednesday || now.DayOfWeek == DayOfWeek.Friday) && now.Hour == 10)                    
+                    {
+                        await SendScheduledMessage();
+                        // Wait a day to avoid sending multiple messages
+                        await Task.Delay(TimeSpan.FromMinutes(60 * 24));
+                    }
+
+                    // Check every 30 minutes
+                    await Task.Delay(TimeSpan.FromMinutes(30));
+                }
+            });
+        }
+
+        private async Task SendScheduledMessage()
+        {
+            var channelId = ulong.Parse(_config["WarningScheduleChannel"]);
+            var channel = await _discordClient.GetChannelAsync(channelId);
+
+            if (channel != null)
+            {
+                List<string> listOfWarnings = _config.GetSection("Warnings").Get<List<string>>();
+                var message = "Reminder: " + listOfWarnings[_random.Next(listOfWarnings.Count)];
+                await channel.SendMessageAsync(message);
+            }
+        }
     }
 }

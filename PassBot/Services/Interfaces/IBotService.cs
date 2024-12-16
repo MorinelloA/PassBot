@@ -7,5 +7,6 @@ namespace PassBot.Services.Interfaces
         Task SendMessageToChannelAsync(ulong channelId, string message);
         bool HasPermission(DiscordUser user);
         void RegisterMessageMonitoring();
+        void StartScheduler();
     }
 }

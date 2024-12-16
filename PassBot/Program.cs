@@ -65,6 +65,7 @@ discord.Ready += async (s, e) =>
 // Initialize BotService and register message monitoring
 var botService = serviceProvider.GetRequiredService<IBotService>();
 botService.RegisterMessageMonitoring();
+botService.StartScheduler();
 
 var slash = discord.UseSlashCommands(new SlashCommandsConfiguration
 {
@@ -79,6 +80,9 @@ slash.RegisterCommands<ProfileCommandsDM>();
 //slash.RegisterCommands<RedemptionCommandsDM>();
 slash.RegisterCommands<AdminCommands>(guildId: ulong.Parse(configuration["GuildId"]));
 slash.RegisterCommands<UserCommands>();
+
+// Scheduler
+var channelId = ulong.Parse(configuration["WarningScheduleChannel"]);
 
 // Connect the bot
 await discord.ConnectAsync();
