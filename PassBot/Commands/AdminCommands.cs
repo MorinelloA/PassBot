@@ -25,7 +25,7 @@ public class AdminCommands : ApplicationCommandModule
     public async Task GeneratePointsReportCommand(InteractionContext ctx)
     {
         // Send a deferred response to avoid a timeout
-        await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        await ctx.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
 
         try
         {
@@ -57,7 +57,18 @@ public class AdminCommands : ApplicationCommandModule
     public async Task GeneratePointsReportCommand(InteractionContext ctx)
     {
         // Send a deferred response to avoid a timeout
-        await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+        try
+        {
+            var response = new DiscordInteractionResponseBuilder()
+            .WithContent("Processing your request...")
+            .AsEphemeral(true); // Mark the initial response as ephemeral
+
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, response);
+        }
+        catch (Exception e)
+        { 
+            return; 
+        }
 
         try
         {
@@ -78,6 +89,13 @@ public class AdminCommands : ApplicationCommandModule
 
             // Fetch all user profiles with points
             var users = await _profileService.GetAllUserProfilesWithPointsAsync();
+
+            if (users == null || !users.Any())
+            {
+                var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There are no user points available to generate the report.");
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
+                return;
+            }
 
             // Generate the spreadsheet
             var stream = await _spreadsheetService.GeneratePointsReportAsync(users);
@@ -109,21 +127,59 @@ public class AdminCommands : ApplicationCommandModule
     [SlashCommand("generate-user-report", "Generates an .xlsx report of all point actions for a specific user and sends it to you.")]
     public async Task GenerateUserReportCommand(InteractionContext ctx, [Option("user", "The user to generate the report for.")] DiscordUser user, [Option("include-cleared", "Should it included cleared records? Default is true.")] bool includeRemoved = true)
     {
-        // Check if the user has permission
-        if (!_botService.HasPermission(ctx.User))
+        // Send a deferred response to avoid a timeout
+        try
         {
-            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            var response = new DiscordInteractionResponseBuilder()
+            .WithContent("Processing your request...")
+            .AsEphemeral(true); // Mark the initial response as ephemeral
+
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, response);
+        }
+        catch (Exception e)
+        {
             return;
         }
 
-        var userPointsLog = await _pointsService.GetUserPointsLogByDiscordIdAsync(user.Id.ToString(), includeRemoved);
-        var stream = await _spreadsheetService.GenerateUserReportAsync(userPointsLog);
+        try
+        {
 
-        var response = new DiscordInteractionResponseBuilder()
-            .AddFile($"{user.Username}_report.xlsx", stream)
-            .AsEphemeral(true);
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                // Create a warning embed
+                var warningEmbed = EmbedUtils.CreateWarningEmbed("Access Denied", "You do not have permission to use this command.");
 
-        await ctx.CreateResponseAsync(response);
+                // Send the warning embed as a follow-up message
+                var followUp = new DiscordFollowupMessageBuilder()
+                    .AddEmbed(warningEmbed)
+                    .AsEphemeral(true);
+
+                await ctx.FollowUpAsync(followUp);
+                return;
+            }
+
+            var userPointsLog = await _pointsService.GetUserPointsLogByDiscordIdAsync(user.Id.ToString(), includeRemoved);
+            var stream = await _spreadsheetService.GenerateUserReportAsync(userPointsLog);
+
+            // Create the follow-up response with the file and send it
+            var fileFollowUp = new DiscordFollowupMessageBuilder()
+                .AddFile($"{user.Username}_report.xlsx", stream)
+                .AsEphemeral(true);
+
+            await ctx.FollowUpAsync(fileFollowUp);
+        }
+        catch(Exception e)
+        {
+            // Create an error embed and send it as a follow-up message
+            var errorEmbed = EmbedUtils.CreateWarningEmbed("Error", "An error occurred while generating the report. Please try again later.");
+
+            var errorFollowUp = new DiscordFollowupMessageBuilder()
+                .AddEmbed(errorEmbed)
+                .AsEphemeral(true);
+
+            await ctx.FollowUpAsync(errorFollowUp);
+        }
     }
 
     [SlashCommand("ping", "Checks if the bot is active.")]
