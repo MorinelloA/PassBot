@@ -1,5 +1,6 @@
 ﻿using ClosedXML.Excel;
 using Microsoft.Extensions.Configuration;
+using NanoidDotNet;
 using PassBot.Models;
 using PassBot.Services.Interfaces;
 
@@ -12,6 +13,37 @@ namespace PassBot.Services
         public SpreadsheetService(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
+        }
+
+        
+        public async Task<MemoryStream> GeneratePointsReportCSVUploadAsync(List<UserProfileWithPoints> users)
+        {
+
+            //NOTE: I made this 3 days ago incase we submit a few days after the month has started.
+            DateTime now = DateTime.Now.AddDays(-3);
+
+            var stream = new MemoryStream();
+            using (var writer = new StreamWriter(stream, leaveOpen: true))
+            {
+                // Write the header row
+                writer.WriteLine("Email,Wallet Address,Points Balance,Reference ID,Month,Year");
+
+                // Write the user data rows
+                foreach (var user in users)
+                {
+                    var email = user.Email ?? "Not set";
+                    var walletAddress = user.WalletAddress ?? "Not set";
+                    var points = user.Points;
+                    var refId = Nanoid.Generate(size: 12);
+
+                    // Write a CSV row
+                    writer.WriteLine($"{email},{walletAddress},{points},{refId},{now.Month},{now.Year}");
+                }
+            }
+
+            // Reset the stream position to the beginning
+            stream.Position = 0;
+            return stream;
         }
 
         public async Task<MemoryStream> GeneratePointsReportAsync(List<UserProfileWithPoints> users)

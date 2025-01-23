@@ -3,6 +3,8 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using PassBot.Models;
 using PassBot.Services.Interfaces;
+using PassBot.Utilities;
+using System.Data;
 using System.Runtime.CompilerServices;
 
 namespace PassBot.Services
@@ -302,6 +304,77 @@ namespace PassBot.Services
                     command.Parameters.AddWithValue("@DiscordUsername", discordUsername);
                     await connection.OpenAsync();
                     await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        public async Task DeleteUserPointsOfUsersFromListAsync(List<UserProfileWithPoints> users, string removerDiscordId)
+        {
+            // Extract DiscordIds from the provided list
+            var discordIds = users.Select(u => u.DiscordId).ToList();
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                // Begin transaction
+                await connection.OpenAsync();
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Step 1: Create a DataTable to represent the TVP
+                        var discordIdTable = new DataTable();
+                        discordIdTable.Columns.Add("DiscordId", typeof(string));
+
+                        foreach (var id in discordIds)
+                        {
+                            discordIdTable.Rows.Add(id);
+                        }
+
+                        // Step 2: Create and execute the DELETE command
+                        string deleteQuery = @"
+                    DELETE FROM UserPoints
+                    WHERE DiscordId IN (SELECT DiscordId FROM @DiscordIdTable);";
+
+                        using (SqlCommand deleteCmd = new SqlCommand(deleteQuery, connection, transaction))
+                        {
+                            deleteCmd.Parameters.Add(new SqlParameter("@DiscordIdTable", SqlDbType.Structured)
+                            {
+                                TypeName = "DiscordIdTable",
+                                Value = discordIdTable
+                            });
+
+                            await deleteCmd.ExecuteNonQueryAsync();
+                        }
+
+                        // Step 3: Create and execute the UPDATE command
+                        string updateLogQuery = @"
+                    UPDATE UserPointsTableLog
+                    SET RemovedAt = GETUTCDATE(),
+                        RemovedBy = @RemoverDiscordId
+                    WHERE DiscordId IN (SELECT DiscordId FROM @DiscordIdTable)
+                      AND RemovedAt IS NULL;";
+
+                        using (SqlCommand updateCmd = new SqlCommand(updateLogQuery, connection, transaction))
+                        {
+                            updateCmd.Parameters.AddWithValue("@RemoverDiscordId", removerDiscordId);
+                            updateCmd.Parameters.Add(new SqlParameter("@DiscordIdTable", SqlDbType.Structured)
+                            {
+                                TypeName = "DiscordIdTable",
+                                Value = discordIdTable
+                            });
+
+                            await updateCmd.ExecuteNonQueryAsync();
+                        }
+
+                        // Commit the transaction
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Rollback transaction if something goes wrong
+                        transaction.Rollback();
+                        throw;
+                    }
                 }
             }
         }

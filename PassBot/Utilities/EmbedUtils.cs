@@ -1,11 +1,48 @@
 ﻿using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using PassBot.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PassBot.Utilities
 {
     public static class EmbedUtils
     {
+        public static DiscordEmbedBuilder CreateProfileValidationEmbed(InteractionContext ctx, DiscordUser user, List<UserProfileWithPoints> validatedProfiles, List<UserCheckError> errors, bool ephemeral = true)
+        {
+            int validatedCount = validatedProfiles == null ? 0 : validatedProfiles.Count;
+            int errosCount = errors == null ? 0 : errors.Count;
+
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = "",//$"{profile.DiscordUsername}'s Profile",
+                Color = DiscordColor.Azure
+            };
+
+            if (validatedCount <= 0 && errosCount <= 0)
+            {
+                embed.Title = "No profiled validated";
+            }
+            else if(errors.Count <= 0)
+            {
+                embed.Title = $"All {validatedCount} profiles validated!";
+            }
+            else
+            {
+                embed.Title = $"{validatedCount} profiles validated, {errosCount} had errors";
+            }
+
+            if (errors.Count > 0)
+            {
+                for (int i = 0; i < errosCount; i++)
+                {
+                    // Display each field on a separate line
+                    embed.AddField($"{(errors[i]?.user?.DiscordUsername ?? "N/A")} : {(errors[i]?.user?.DiscordId ?? "N/A")}", errors[i]?.error ?? "N/A", false);
+                }
+            }
+
+            return embed;
+        }
+
         public static async Task CreateAndSendUpdatePointsEmbed(InteractionContext ctx, DiscordUser user, long points, long totalPoints, string message = "", bool ephemeral = false)
         {
             // Create the base description for the points response
@@ -348,8 +385,8 @@ namespace PassBot.Utilities
 
                 ("view-profile", "Views your profile."),
                 ("view-points", "View your total points."),
-                ("set-email", "Set your email address."),
-                ("view-email", "View your email address."),
+                ("set-email", "Set your Pass email address."),
+                ("view-email", "View your Pass email address."),
                 ("set-wallet-address", "Set your Pass wallet address."),
                 ("view-wallet", "View your Pass wallet address."),
                 ("set-x-account", "Set your X account."),

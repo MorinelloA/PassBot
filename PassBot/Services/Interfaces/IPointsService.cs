@@ -10,6 +10,7 @@ namespace PassBot.Services.Interfaces
         Task AddPointsAsync(string discordId, string discordUsername, long points);
         Task<long> GetUserPointsAsync(string discordId);
         Task LogPointsAssignmentAsync(string discordId, string discordUsername, string assignerId, string assignerUsername, long points, string message = null);
+        Task DeleteUserPointsOfUsersFromListAsync(List<UserProfileWithPoints> users, string removerDiscordId);
         Task TruncateUserPointsTableAsync(string removerDiscordId);
         Task<CheckInHelper> CheckInUserAsync(string discordId, string discordUsername, CheckInLog? lastCheckIn);
         Task<CheckInLog?> GetLastCheckInAsync(string discordId);

@@ -1,20 +1,28 @@
 ﻿using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
+using Microsoft.Extensions.Configuration;
+using PassBot.Models;
 using PassBot.Services;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
+using System.Net.Http;
+using System.Text.Json;
 
 public class ProfileCommandsServer : ApplicationCommandModule
 {
     private readonly IBotService _botService;
     private readonly IProfileService _profileService;
     private readonly IPointsService _pointsService;
+    private readonly IConfiguration _config;
+    private readonly HttpClient _httpClient;
 
-    public ProfileCommandsServer(IBotService botService, IPointsService pointsService, IProfileService profileService)
+    public ProfileCommandsServer(IBotService botService, IPointsService pointsService, IProfileService profileService, IConfiguration config, HttpClient httpClient)
     {
         _botService = botService;
         _pointsService = pointsService;
         _profileService = profileService;
+        _config = config;
+        _httpClient = httpClient;
     }
 
     [SlashCommand("set-user-email", "Set the email address of a specified user.")]
@@ -31,6 +39,68 @@ public class ProfileCommandsServer : ApplicationCommandModule
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The email address '{email}' is not valid", $"Please enter a valid email address");
             return;
+        }
+
+        var apiEndpoint = _config["UserProfileAPIEndpoint"];
+
+        if (!string.IsNullOrEmpty(apiEndpoint) && apiEndpoint != "debug")
+        {
+            HttpResponseMessage _response = await _httpClient.GetAsync(apiEndpoint);
+
+            // Ensure the response was successful
+            _response.EnsureSuccessStatusCode();
+
+            // Read the response content as a string
+            var responseContent = await _response.Content.ReadAsStringAsync();
+
+            // Deserialize the JSON response into the ApiResponse object
+            UserCheckApiResponse? response = JsonSerializer.Deserialize<UserCheckApiResponse>(responseContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true // To handle case-insensitive JSON keys
+            });
+
+            if (response == null)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Response is null. Contact Admin");
+                return;
+            }
+            else if (response.Data == null)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"API Data is null. Contact Admin");
+                return;
+            }
+            else if (response.Data.VerifiedEmail != null && !response.Data.VerifiedEmail.IsPassEmail)
+            {
+                if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
+                {
+                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Both Email and Wallet are not connected to a Pass account");
+                    return;
+                }
+                else
+                {
+                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email is not connected to a Pass account");
+                    return;
+                }
+            }
+            else if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Wallet is not connected to a Pass account");
+                return;
+            }
+            else if (response.Data.VerifiedWalletAddress != null && response.Data.VerifiedEmail != null && response.Data.MatchStatus != null && !response.Data.MatchStatus.IsEmailMatchWithWalletAddress)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email & Wallet don't match the same Pass user");
+                return;
+            }
+            else if (response.Data.VerifiedWalletAddress == null && response.Data.VerifiedEmail == null)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Issue with Data Verified statuses. Contact Admin");
+                return;
+            }
+            else
+            {
+                //Nothing to do here. Continue
+            }
         }
 
         await _profileService.SetEmailAsync(user, email);
@@ -70,6 +140,68 @@ public class ProfileCommandsServer : ApplicationCommandModule
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The wallet address '{walletAddress}' is not valid", $"Please enter a valid Pass wallet address");
             return;
+        }
+
+        var apiEndpoint = _config["UserProfileAPIEndpoint"];
+
+        if (!string.IsNullOrEmpty(apiEndpoint) && apiEndpoint != "debug")
+        {
+            HttpResponseMessage _response = await _httpClient.GetAsync(apiEndpoint);
+
+            // Ensure the response was successful
+            _response.EnsureSuccessStatusCode();
+
+            // Read the response content as a string
+            var responseContent = await _response.Content.ReadAsStringAsync();
+
+            // Deserialize the JSON response into the ApiResponse object
+            UserCheckApiResponse? response = JsonSerializer.Deserialize<UserCheckApiResponse>(responseContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true // To handle case-insensitive JSON keys
+            });
+
+            if (response == null)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Response is null. Contact Admin");
+                return;
+            }
+            else if (response.Data == null)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"API Data is null. Contact Admin");
+                return;
+            }
+            else if (response.Data.VerifiedEmail != null && !response.Data.VerifiedEmail.IsPassEmail)
+            {
+                if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
+                {
+                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Both Email and Wallet are not connected to a Pass account");
+                    return;
+                }
+                else
+                {
+                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email is not connected to a Pass account");
+                    return;
+                }
+            }
+            else if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Wallet is not connected to a Pass account");
+                return;
+            }
+            else if (response.Data.VerifiedWalletAddress != null && response.Data.VerifiedEmail != null && response.Data.MatchStatus != null && !response.Data.MatchStatus.IsEmailMatchWithWalletAddress)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email & Wallet don't match the same Pass user");
+                return;
+            }
+            else if (response.Data.VerifiedWalletAddress == null && response.Data.VerifiedEmail == null)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Issue with Data Verified statuses. Contact Admin");
+                return;
+            }
+            else
+            {
+                //Nothing to do here. Continue
+            }
         }
 
         await _profileService.SetWalletAddressAsync(user, walletAddress);

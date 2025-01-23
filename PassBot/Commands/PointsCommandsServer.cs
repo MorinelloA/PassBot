@@ -14,12 +14,14 @@ namespace PassBot.Commands
     {
         private readonly IBotService _botService;
         private readonly IPointsService _pointsService;
+        private readonly IProfileService _profileService;
         private readonly IConfiguration _config;
 
-        public PointsCommandsServer(IBotService botService, IPointsService pointsService, IConfiguration config)
+        public PointsCommandsServer(IBotService botService, IPointsService pointsService, IProfileService profileService, IConfiguration config)
         {
             _botService = botService;
             _pointsService = pointsService;
+            _profileService = profileService;
             _config = config;
         }
 
@@ -185,7 +187,7 @@ namespace PassBot.Commands
             }
         }*/
 
-        [SlashCommand("clear-points", "Clears all points from the system.")]
+        [SlashCommand("clear-points", "Clears all points of users with completed profile.")]
         public async Task ClearPointsCommand(InteractionContext ctx)
         {
             // Check if the user has permission
@@ -223,10 +225,31 @@ namespace PassBot.Commands
 
             if (result.Result.Id == "confirm_clear_points")
             {
-                // User confirmed the action
-                await _pointsService.TruncateUserPointsTableAsync(ctx.User.Id.ToString());
+                // Fetch all user profiles with points
+                var users = await _profileService.GetAllUserProfilesWithPointsAsync();
 
-                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("All points have been cleared."));
+                if (users == null || !users.Any())
+                {
+                    var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There are no user points available to generate the report.");
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
+                    return;
+                }
+
+                //Filter users who have both a email and wallet listed
+                users = users.Where(x => !string.IsNullOrEmpty(x.WalletAddress) && !string.IsNullOrEmpty(x.Email)).ToList();
+
+                if (users == null || !users.Any())
+                {
+                    var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There are no user points available to generate the report.");
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
+                    return;
+                }
+
+                // User confirmed the action
+                //await _pointsService.TruncateUserPointsTableAsync(ctx.User.Id.ToString());
+                await _pointsService.DeleteUserPointsOfUsersFromListAsync(users, ctx.User.Id.ToString());
+
+                await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("All points from users with completed profiles have been cleared."));
             }
         }
 

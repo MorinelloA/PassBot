@@ -38,6 +38,8 @@ services.AddSingleton<IBotService, BotService>();
 services.AddSingleton<IEmailService, EmailService>();
 //services.AddSingleton<IRedemptionService, RedemptionService>();
 
+services.AddHttpClient();
+
 // Register command modules as services
 services.AddSingleton<PointsCommandsDM>();
 services.AddSingleton<PointsCommandsServer>();
