@@ -7,5 +7,7 @@ namespace PassBot.Services.Interfaces
         Task<MemoryStream> GeneratePointsReportAsync(List<UserProfileWithPoints> users);
         Task<MemoryStream> GeneratePointsReportCSVUploadAsync(List<UserProfileWithPoints> users);
         Task<MemoryStream> GenerateUserReportAsync(List<UserPointsLog> logs);
+        Task<MemoryStream> GenerateDatabaseBackupAsync(DBBackup backup);
+        Task<DBBackup> GetFullBackupAsync();
     }
 }

@@ -491,4 +491,71 @@ public class AdminCommands : ApplicationCommandModule
             await ctx.FollowUpAsync(errorFollowUp);
         }
     }
+
+    [SlashCommand("generate-full-backup", "Generates a complete data backup as an .xlsx")]
+    public async Task GenerateFullBackupCommand(InteractionContext ctx)
+    {
+        // Send a deferred response to avoid a timeout
+        try
+        {
+            var response = new DiscordInteractionResponseBuilder()
+            .WithContent("Processing your request...")
+            .AsEphemeral(true); // Mark the initial response as ephemeral
+
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, response);
+        }
+        catch (Exception e)
+        {
+            return;
+        }
+
+        try
+        {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                // Create a warning embed
+                var warningEmbed = EmbedUtils.CreateWarningEmbed("Access Denied", "You do not have permission to use this command.");
+
+                // Send the warning embed as a follow-up message
+                var followUp = new DiscordFollowupMessageBuilder()
+                    .AddEmbed(warningEmbed)
+                    .AsEphemeral(true);
+
+                await ctx.FollowUpAsync(followUp);
+                return;
+            }
+
+            // Fetch all user profiles with points
+            var backup = await _spreadsheetService.GetFullBackupAsync();
+
+            if (backup == null)
+            {
+                var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There is no data available to backup.");
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
+                return;
+            }
+
+            // Generate the spreadsheet
+            var stream = await _spreadsheetService.GenerateDatabaseBackupAsync(backup);
+
+            // Create the follow-up response with the file and send it
+            var fileFollowUp = new DiscordFollowupMessageBuilder()
+                .AddFile($"pass_points_backup_{DateTime.UtcNow:yyyy-MM-dd_HH-mm-ss}.xlsx", stream)
+                .AsEphemeral(true);
+
+            await ctx.FollowUpAsync(fileFollowUp);
+        }
+        catch (Exception ex)
+        {
+            // Create an error embed and send it as a follow-up message
+            var errorEmbed = EmbedUtils.CreateWarningEmbed("Error", "An error occurred while generating the report. Please try again later.");
+
+            var errorFollowUp = new DiscordFollowupMessageBuilder()
+                .AddEmbed(errorEmbed)
+                .AsEphemeral(true);
+
+            await ctx.FollowUpAsync(errorFollowUp);
+        }
+    }
 }
