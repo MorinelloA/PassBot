@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DocumentFormat.OpenXml.Bibliography;
+using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using PassBot.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -7,6 +8,28 @@ namespace PassBot.Utilities
 {
     public static class EmbedUtils
     {
+        public static DiscordEmbedBuilder CreateMonthlyPassPerksKPIEmbed(InteractionContext ctx, MonthlyKPIHelper kpis)
+        {
+            // Create an embed builder for the points response
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = $@"KPIs for {kpis.month}-{kpis.year}",
+                Description = $"Total Users: {kpis.totalUsers}",
+                Color = DiscordColor.Azure // You can customize the color here
+            };
+
+            embed.AddField("Active users", $"{kpis.activeUsers}", true);
+            embed.AddField("Points Distributed", $"{kpis.pointsDistributed}", true);
+            embed.AddField("Actions", $"{kpis.actions}", true);
+            embed.AddField("Polls", $"{kpis.polls}", true);
+            embed.AddField("Poll Responses", $"{kpis.pollResponses}", true);
+            embed.AddField("Average responses per poll", $"{kpis.averageNumOfPollResponses:0.0}", true);
+
+            return embed;
+
+        }
+
+
         public static DiscordEmbedBuilder CreateProfileValidationEmbed(InteractionContext ctx, DiscordUser user, List<UserProfileWithPoints> validatedProfiles, List<UserCheckError> errors, bool ephemeral = true)
         {
             int validatedCount = validatedProfiles == null ? 0 : validatedProfiles.Count;

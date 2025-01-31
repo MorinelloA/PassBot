@@ -121,8 +121,8 @@ public class AdminCommands : ApplicationCommandModule
             await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, response);
         }
         catch (Exception e)
-        { 
-            return; 
+        {
+            return;
         }
 
         try
@@ -161,6 +161,67 @@ public class AdminCommands : ApplicationCommandModule
                 .AsEphemeral(true);
 
             await ctx.FollowUpAsync(fileFollowUp);
+        }
+        catch (Exception ex)
+        {
+            // Create an error embed and send it as a follow-up message
+            var errorEmbed = EmbedUtils.CreateWarningEmbed("Error", "An error occurred while generating the report. Please try again later.");
+
+            var errorFollowUp = new DiscordFollowupMessageBuilder()
+                .AddEmbed(errorEmbed)
+                .AsEphemeral(true);
+
+            await ctx.FollowUpAsync(errorFollowUp);
+        }
+    }
+
+    [SlashCommand("gather-monthly-pass-perk-kpis", "Gathers monthly KPIs for Pass Perks")]
+    public async Task GatherMonthlyKPIs(InteractionContext ctx, [Option("month", "The month (1-12) to gather KPIs for.")] long month, [Option("year", "The year (yyyy) to gather KPIs for.")] long year)
+    {
+        // Send a deferred response to avoid a timeout
+        try
+        {
+            var response = new DiscordInteractionResponseBuilder()
+            .WithContent("Processing your request...")
+            .AsEphemeral(true); // Mark the initial response as ephemeral
+
+            await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, response);
+        }
+        catch (Exception e)
+        {
+            return;
+        }
+
+        try
+        {
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                // Create a warning embed
+                var warningEmbed = EmbedUtils.CreateWarningEmbed("Access Denied", "You do not have permission to use this command.");
+
+                // Send the warning embed as a follow-up message
+                var followUp = new DiscordFollowupMessageBuilder()
+                    .AddEmbed(warningEmbed)
+                    .AsEphemeral(true);
+
+                await ctx.FollowUpAsync(followUp);
+                return;
+            }
+
+            // Fetch all user profiles with points
+            var kpis = await _pointsService.GetMonthlyKPIDataAsync((int)month, (int)year);
+
+            if (kpis == null)
+            {
+                var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There is no KPI available for this month. There may be an error.");
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
+                return;
+            }
+
+            // Generate embed
+            var embed = EmbedUtils.CreateMonthlyPassPerksKPIEmbed(ctx, kpis);
+            await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embed).AsEphemeral(true));
         }
         catch (Exception ex)
         {
@@ -326,6 +387,8 @@ public class AdminCommands : ApplicationCommandModule
                 payload.Email = user.Email.Trim();
 
                 var endpoint = _config["UserProfileAPIEndpoint"];
+                var apiKey = _config["PassAPIKey"];
+
                 if (string.IsNullOrEmpty(endpoint))
                 {
                     var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Endpoint", "The API endpoint is not set.");
@@ -388,7 +451,12 @@ public class AdminCommands : ApplicationCommandModule
                 }
                 else
                 {
-                    HttpResponseMessage _response = await _httpClient.GetAsync(endpoint);
+                    // Create a request message to include the header
+                    var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+                    request.Headers.Add("X-API-KEY", apiKey);
+
+                    // Send the request
+                    HttpResponseMessage _response = await _httpClient.SendAsync(request);
 
                     // Ensure the response was successful
                     _response.EnsureSuccessStatusCode();

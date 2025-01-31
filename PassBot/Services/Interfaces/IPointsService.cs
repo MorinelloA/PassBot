@@ -5,6 +5,7 @@ namespace PassBot.Services.Interfaces
 {
     public interface IPointsService
     {
+        Task<MonthlyKPIHelper> GetMonthlyKPIDataAsync(int month, int year);
         Task<long> GetPointsToAssignAsync(long? pointsToAdd, string category);
         Task UpdatePointsAsync(DiscordUser assigner, DiscordUser user, long points, string message);
         Task AddPointsAsync(string discordId, string discordUsername, long points);

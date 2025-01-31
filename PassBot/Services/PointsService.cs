@@ -82,6 +82,62 @@ namespace PassBot.Services
             }
         }
 
+        public async Task<MonthlyKPIHelper> GetMonthlyKPIDataAsync(int month, int year)
+        {
+            MonthlyKPIHelper kpis = new MonthlyKPIHelper();
+            kpis.month = month;
+            kpis.year = year;
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"SELECT 
+                    COALESCE(
+                        (SELECT COUNT(DISTINCT u.[DiscordId])
+                            FROM [PassApp].[dbo].[UserPointsTableLog] u), 0
+                    ) AS totalUsers,
+                    COALESCE(COUNT(DISTINCT upLog.[DiscordId]), 0) AS activeUsers,
+                    COALESCE(SUM(upLog.[Points]), 0) AS pointsDistributed,
+                    COALESCE(COUNT(DISTINCT upLog.[Message]), 0) AS actions,
+                    COALESCE(COUNT(DISTINCT CASE 
+                        WHEN upLog.[Message] LIKE '%Poll%' THEN upLog.[Message]
+                        ELSE NULL
+                    END), 0) AS polls,
+                    COALESCE(COUNT(CASE 
+                        WHEN upLog.[Message] LIKE '%Poll%' THEN upLog.[Message]
+                        ELSE NULL
+                    END), 0) AS pollResponses
+                FROM [PassApp].[dbo].[UserPointsTableLog] AS upLog
+                WHERE MONTH(upLog.[InsertedAt]) = @Month
+                    AND YEAR(upLog.[InsertedAt]) = @Year;";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Month", month);
+                    command.Parameters.AddWithValue("@Year", year);
+                    await connection.OpenAsync();
+
+                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            kpis.totalUsers = reader["totalUsers"] != DBNull.Value ? Convert.ToInt32(reader["totalUsers"]) : 0;
+                            kpis.activeUsers = reader["activeUsers"] != DBNull.Value ? Convert.ToInt32(reader["activeUsers"]) : 0;
+                            kpis.pointsDistributed = reader["pointsDistributed"] != DBNull.Value ? Convert.ToInt32(reader["pointsDistributed"]) : 0;
+                            kpis.actions = reader["actions"] != DBNull.Value ? Convert.ToInt32(reader["actions"]) : 0;
+                            kpis.polls = reader["polls"] != DBNull.Value ? Convert.ToInt32(reader["polls"]) : 0;
+                            kpis.pollResponses = reader["pollResponses"] != DBNull.Value ? Convert.ToInt32(reader["pollResponses"]) : 0;
+
+                            // Calculate the averageNumOfPollResponses
+                            kpis.averageNumOfPollResponses = kpis.polls > 0
+                                ? (decimal)kpis.pollResponses / kpis.polls
+                                : 0;
+                        }
+                    }
+                }
+            }
+            return kpis;
+        }
+
         public async Task<long> GetUserPointsAsync(string discordId)
         {
             long points = 0;
