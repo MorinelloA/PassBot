@@ -108,7 +108,8 @@ namespace PassBot.Services
                     END), 0) AS pollResponses
                 FROM [PassApp].[dbo].[UserPointsTableLog] AS upLog
                 WHERE MONTH(upLog.[InsertedAt]) = @Month
-                    AND YEAR(upLog.[InsertedAt]) = @Year;";
+                    AND YEAR(upLog.[InsertedAt]) = @Year
+                    AND upLog.[Message] NOT LIKE '%Zealy%';";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
