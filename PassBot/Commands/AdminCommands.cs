@@ -87,8 +87,36 @@ public class AdminCommands : ApplicationCommandModule
                 return;
             }
 
+            List<UserProfileWithPoints?> validatedUsers = new List<UserProfileWithPoints?>();
+            //Filter users who have valid PAss email and wallets
+            foreach(var user in users)
+            {
+                if(user == null || string.IsNullOrEmpty(user.WalletAddress) || string.IsNullOrEmpty(user.Email))
+                {
+                    continue;
+                }
+
+                UserCheckAPISent payload = new UserCheckAPISent();
+                payload.WalletAddress = user.WalletAddress.Trim();
+                payload.Email = user.Email.Trim();
+                          
+                var userCheckError = await _profileService.CheckUserProfileAsync(payload);
+
+                if (userCheckError != null && userCheckError.isError == false)
+                {
+                    validatedUsers.Add(user);
+                }
+            }
+
+            if (validatedUsers == null || !validatedUsers.Any())
+            {
+                var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There are no user points available to generate the report.");
+                await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
+                return;
+            }
+
             // Generate the spreadsheet
-            var stream = await _spreadsheetService.GeneratePointsReportCSVUploadAsync(users);
+            var stream = await _spreadsheetService.GeneratePointsReportCSVUploadAsync(validatedUsers);
 
             // Create the follow-up response with the file and send it
             var fileFollowUp = new DiscordFollowupMessageBuilder()

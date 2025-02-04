@@ -287,15 +287,17 @@ namespace PassBot.Services
             {
                 // SQL query to get all users with either profiles, points, or both
                 string query = @"
-            SELECT 
-                COALESCE(up.DiscordId, p.DiscordId) AS DiscordId,
-                COALESCE(up.DiscordUsername, p.DiscordUsername) AS DiscordUsername,  -- Prioritize the first non-null username
-                up.Email,
-                up.WalletAddress,
-                up.XAccount,
-                COALESCE(p.Points, 0) AS Points
-            FROM UserProfile up
-            FULL OUTER JOIN UserPoints p ON up.DiscordId = p.DiscordId";
+                SELECT 
+                    COALESCE(up.DiscordId, p.DiscordId) AS DiscordId,
+                    COALESCE(up.DiscordUsername, p.DiscordUsername) AS DiscordUsername,  
+                    up.Email,
+                    up.WalletAddress,
+                    up.XAccount,
+                    COALESCE(p.Points, 0) AS Points
+                FROM UserProfile up
+                FULL OUTER JOIN UserPoints p ON up.DiscordId = p.DiscordId
+                WHERE COALESCE(p.Points, 0) > 0";
+
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {

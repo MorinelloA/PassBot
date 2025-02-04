@@ -230,7 +230,7 @@ namespace PassBot.Commands
 
                 if (users == null || !users.Any())
                 {
-                    var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There are no user points available to generate the report.");
+                    var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There are no user points available to clear.");
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
                     return;
                 }
@@ -240,14 +240,42 @@ namespace PassBot.Commands
 
                 if (users == null || !users.Any())
                 {
-                    var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There are no user points available to generate the report.");
+                    var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There are no user points available to clear.");
+                    await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
+                    return;
+                }
+
+                List<UserProfileWithPoints?> validatedUsers = new List<UserProfileWithPoints?>();
+                //Filter users who have valid PAss email and wallets
+                foreach (var user in users)
+                {
+                    if (user == null || string.IsNullOrEmpty(user.WalletAddress) || string.IsNullOrEmpty(user.Email))
+                    {
+                        continue;
+                    }
+
+                    UserCheckAPISent payload = new UserCheckAPISent();
+                    payload.WalletAddress = user.WalletAddress.Trim();
+                    payload.Email = user.Email.Trim();
+
+                    var userCheckError = await _profileService.CheckUserProfileAsync(payload);
+
+                    if (userCheckError != null && userCheckError.isError == false)
+                    {
+                        validatedUsers.Add(user);
+                    }
+                }
+
+                if (validatedUsers == null || !validatedUsers.Any())
+                {
+                    var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Data", "There are no user points available to clear.");
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
                     return;
                 }
 
                 // User confirmed the action
                 //await _pointsService.TruncateUserPointsTableAsync(ctx.User.Id.ToString());
-                await _pointsService.DeleteUserPointsOfUsersFromListAsync(users, ctx.User.Id.ToString());
+                await _pointsService.DeleteUserPointsOfUsersFromListAsync(validatedUsers, ctx.User.Id.ToString());
 
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("All points from users with completed profiles have been cleared."));
             }
