@@ -1,9 +1,15 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+﻿using Azure;
+using DocumentFormat.OpenXml.Spreadsheet;
 using DSharpPlus.Entities;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using PassBot.Models;
 using PassBot.Services.Interfaces;
+using System.Net.Http.Headers;
+using System.Net.Http;
+using System.Text.Json;
+using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PassBot.Services
 {
@@ -12,15 +18,103 @@ namespace PassBot.Services
         private readonly string _connectionString;
         private readonly int _profileChangeCooldownDays;
         private readonly int _profileAdditionPoints;
+        private readonly string _endpoint;
+        private readonly string _apiKey;
+        private readonly HttpClient _httpClient;
 
         private readonly IPointsService _pointsService;
 
-        public ProfileService(IConfiguration configuration, IPointsService pointsService)
+        public ProfileService(IConfiguration configuration, IPointsService pointsService, HttpClient httpClient)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _endpoint = configuration.GetValue<string>("UserProfileAPIEndpoint");
+            _apiKey = configuration.GetValue<string>("PassAPIKey");
             _profileChangeCooldownDays = configuration.GetValue<int>("ProfileChangeCooldownDays");
             _profileAdditionPoints = configuration.GetValue<int>("ProfileAdditionPoints");            
             _pointsService = pointsService;
+            _httpClient = httpClient;
+        }
+
+        public async Task<UserCheckError> CheckUserProfileAsync(UserCheckAPISent profile)
+        {
+            // Serialize the payload to JSON
+            var jsonPayload = JsonSerializer.Serialize(profile, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase // Converts "Email" → "email", "WalletAddress" → "walletAddress"
+            });
+
+
+            // Create the HTTP request
+            var request = new HttpRequestMessage(HttpMethod.Post, _endpoint)
+            {
+                Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
+            };
+
+            // Add required headers
+            request.Headers.Add("X-API-KEY", _apiKey);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            // Send the request
+            HttpResponseMessage _response = await _httpClient.SendAsync(request);
+
+            // Read the response content
+            var responseContent = await _response.Content.ReadAsStringAsync();
+
+            // Ensure the response was successful
+            _response.EnsureSuccessStatusCode();
+
+            // Deserialize the JSON response into the ApiResponse object
+            UserCheckApiResponse? response = JsonSerializer.Deserialize<UserCheckApiResponse>(responseContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            UserCheckError userCheckError = new UserCheckError();
+
+            if (response == null)
+            {
+                userCheckError.error = "API Response is null";
+                userCheckError.isError = true;
+            }
+            else if (response.Data == null)
+            {
+                userCheckError.error = "API Data is null";
+                userCheckError.isError = true;
+            }
+            else if (response.Data.VerifiedEmail != null && !response.Data.VerifiedEmail.IsPassEmail)
+            {
+                if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
+                {
+                    userCheckError.error = "Both Email and Wallet are not Pass addresses";
+                    userCheckError.isError = true;
+                }
+                else
+                {
+                    userCheckError.error = "Email is not a Pass address";
+                    userCheckError.isError = true;
+                }
+            }
+            else if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
+            {
+                userCheckError.error = "Wallet is not a Pass address";
+                userCheckError.isError = true;
+            }
+            else if (!string.IsNullOrWhiteSpace(profile.WalletAddress) && !string.IsNullOrWhiteSpace(profile.Email) && response.Data.VerifiedWalletAddress != null && response.Data.VerifiedEmail != null && (response.Data.MatchStatus == null || !response.Data.MatchStatus.IsEmailMatchWithWalletAddress))
+            {
+                userCheckError.error = "Email & Wallet don't match the same Pass user";
+                userCheckError.isError = true;
+            }
+            else if (response.Data.VerifiedWalletAddress == null && response.Data.VerifiedEmail == null)
+            {                
+                userCheckError.error = "Issue with Data Verified statuses. Contact Admin";
+                userCheckError.isError = true;
+            }
+            else
+            {
+                userCheckError.isError = false;
+            }
+
+            return userCheckError;
         }
 
         public async Task<UserProfile> GetUserProfileAsync(string discordId)

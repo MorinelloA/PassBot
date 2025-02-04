@@ -10,6 +10,8 @@ using PassBot.Services;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 
 public class AdminCommands : ApplicationCommandModule
@@ -382,160 +384,33 @@ public class AdminCommands : ApplicationCommandModule
                     continue;
                 }
 
-                UserCheckAPISent payload = new UserCheckAPISent();
-                payload.WalletAddress = user.WalletAddress.Trim();
-                payload.Email = user.Email.Trim();
-
-                var endpoint = _config["UserProfileAPIEndpoint"];
-                var apiKey = _config["PassAPIKey"];
-
+                /*
                 if (string.IsNullOrEmpty(endpoint))
                 {
                     var noDataEmbed = EmbedUtils.CreateWarningEmbed("No Endpoint", "The API endpoint is not set.");
                     await ctx.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(noDataEmbed).AsEphemeral(true));
                     return;
                 }
+                */
 
-                UserCheckApiResponse? response;
-                                
-                if(endpoint == "debug")
+                UserCheckAPISent payload = new UserCheckAPISent();
+                payload.WalletAddress = user.WalletAddress.Trim();
+                payload.Email = user.Email.Trim();
+                          
+                var userCheckError = await _profileService.CheckUserProfileAsync(payload);
+
+                if(userCheckError != null)
                 {
-                    Random random = new Random();
-                    int randomNumber = random.Next(1, 14);
-
-                    response = new UserCheckApiResponse();
-
-                    response.Data = new UserCheckData();
-
-                    if (randomNumber != 3)
+                    if (userCheckError.isError)
                     {
-                        if (randomNumber == 10)
-                        {
-                            response.Data.VerifiedEmail = new VerifiedEmail();
-                            response.Data.VerifiedWalletAddress = new VerifiedWalletAddress();
-                            response.Data.MatchStatus = new MatchStatus();
-
-                            response.Data.VerifiedEmail.IsPassEmail = true;
-                            response.Data.VerifiedWalletAddress.IsPassWalletAddress = true;
-                            response.Data.MatchStatus.IsEmailMatchWithWalletAddress = false;
-                        }
-                        else
-                        {
-                            if (randomNumber != 1)
-                            {
-                                response.Data.VerifiedEmail = new VerifiedEmail();
-                                if (randomNumber > 5)
-                                {
-                                    response.Data.VerifiedEmail.IsPassEmail = true;
-                                }
-                                else
-                                {
-                                    response.Data.VerifiedEmail.IsPassEmail = false;
-                                }
-                            }
-                            if (randomNumber != 2)
-                            {
-                                response.Data.VerifiedWalletAddress = new VerifiedWalletAddress();
-
-                                if (randomNumber > 7)
-                                {
-                                    response.Data.VerifiedWalletAddress.IsPassWalletAddress = true;
-                                }
-                                else
-                                {
-                                    response.Data.VerifiedWalletAddress.IsPassWalletAddress = false;
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // Create a request message to include the header
-                    var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
-                    request.Headers.Add("X-API-KEY", apiKey);
-
-                    // Send the request
-                    HttpResponseMessage _response = await _httpClient.SendAsync(request);
-
-                    // Ensure the response was successful
-                    _response.EnsureSuccessStatusCode();
-
-                    // Read the response content as a string
-                    var responseContent = await _response.Content.ReadAsStringAsync();
-
-                    // Deserialize the JSON response into the ApiResponse object
-                    response = JsonSerializer.Deserialize<UserCheckApiResponse>(responseContent, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true // To handle case-insensitive JSON keys
-                    });
-                }
-
-                
-
-                if (response == null)
-                {
-                    UserCheckError userCheckError = new UserCheckError();
-                    userCheckError.user = user;
-                    userCheckError.error = "API Response is null";
-
-                    errors.Add(userCheckError);
-                }
-                else if (response.Data == null)
-                {
-                    UserCheckError userCheckError = new UserCheckError();
-                    userCheckError.user = user;
-                    userCheckError.error = "API Data is null";
-
-                    errors.Add(userCheckError);
-                }
-                else if (response.Data.VerifiedEmail != null && !response.Data.VerifiedEmail.IsPassEmail)
-                {
-                    if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-                    {
-                        UserCheckError userCheckError = new UserCheckError();
                         userCheckError.user = user;
-                        userCheckError.error = "Both Email and Wallet are invalid";
-
                         errors.Add(userCheckError);
                     }
                     else
                     {
-                        UserCheckError userCheckError = new UserCheckError();
-                        userCheckError.user = user;
-                        userCheckError.error = "Email is invalid";
-
-                        errors.Add(userCheckError);
+                        validatedProfiles.Add(user);
                     }
-                }
-                else if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-                {
-                    UserCheckError userCheckError = new UserCheckError();
-                    userCheckError.user = user;
-                    userCheckError.error = "Wallet is invalid";
-
-                    errors.Add(userCheckError);
-                }
-                else if(response.Data.VerifiedWalletAddress != null && response.Data.VerifiedEmail != null && response.Data.MatchStatus != null && !response.Data.MatchStatus.IsEmailMatchWithWalletAddress)
-                {
-                    UserCheckError userCheckError = new UserCheckError();
-                    userCheckError.user = user;
-                    userCheckError.error = "Email & Wallet don't match";
-
-                    errors.Add(userCheckError);
-                }
-                else if (response.Data.VerifiedWalletAddress == null && response.Data.VerifiedEmail == null)
-                {
-                    UserCheckError userCheckError = new UserCheckError();
-                    userCheckError.user = user;
-                    userCheckError.error = "Issue with Data Verified statuses";
-
-                    errors.Add(userCheckError);
-                }
-                else
-                {
-                    validatedProfiles.Add(user);
-                }
+                }                    
             }
 
             var embed = EmbedUtils.CreateProfileValidationEmbed(ctx, ctx.User, validatedProfiles, errors, true);

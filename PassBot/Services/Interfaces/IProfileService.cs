@@ -14,5 +14,6 @@ namespace PassBot.Services.Interfaces
         Task AddProfileChangeLogAsync(ProfileChangeLog changeLog);
         Task<TimeSpan?> GetTimeUntilNextProfileChangeAsync(string discordId, string item);
         Task<DateTime?> GetLastChangeTimeAsync(string discordId, string itemName);
+        Task<UserCheckError> CheckUserProfileAsync(UserCheckAPISent profile);
     }
 }

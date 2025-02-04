@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.Configuration;
 using PassBot.Models;
@@ -28,6 +29,14 @@ public class ProfileCommandsServer : ApplicationCommandModule
     [SlashCommand("set-user-email", "Set the email address of a specified user.")]
     public async Task SetUserEmailCommand(InteractionContext ctx, [Option("user", "The user to set the email for")] DiscordUser user, [Option("email", "The email address to set")] string email)
     {
+        var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(user.Id.ToString());
+        string walletAddress = profile == null ? null : profile.WalletAddress;
+
+        if (!string.IsNullOrEmpty(email))
+        {
+            email = email.ToLower().Trim();
+        }
+
         // Check if the user has permission
         if (!_botService.HasPermission(ctx.User))
         {
@@ -41,70 +50,30 @@ public class ProfileCommandsServer : ApplicationCommandModule
             return;
         }
 
-        var apiEndpoint = _config["UserProfileAPIEndpoint"];
+        UserCheckAPISent payload = new UserCheckAPISent();
+        payload.WalletAddress = walletAddress;
+        payload.Email = email;
 
-        if (!string.IsNullOrEmpty(apiEndpoint) && apiEndpoint != "debug")
+        var userCheckError = await _profileService.CheckUserProfileAsync(payload);
+
+        if (userCheckError != null)
         {
-            HttpResponseMessage _response = await _httpClient.GetAsync(apiEndpoint);
-
-            // Ensure the response was successful
-            _response.EnsureSuccessStatusCode();
-
-            // Read the response content as a string
-            var responseContent = await _response.Content.ReadAsStringAsync();
-
-            // Deserialize the JSON response into the ApiResponse object
-            UserCheckApiResponse? response = JsonSerializer.Deserialize<UserCheckApiResponse>(responseContent, new JsonSerializerOptions
+            if (userCheckError.isError)
             {
-                PropertyNameCaseInsensitive = true // To handle case-insensitive JSON keys
-            });
-
-            if (response == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Response is null. Contact Admin");
-                return;
-            }
-            else if (response.Data == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"API Data is null. Contact Admin");
-                return;
-            }
-            else if (response.Data.VerifiedEmail != null && !response.Data.VerifiedEmail.IsPassEmail)
-            {
-                if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-                {
-                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Both Email and Wallet are not connected to a Pass account");
-                    return;
-                }
-                else
-                {
-                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email is not connected to a Pass account");
-                    return;
-                }
-            }
-            else if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Wallet is not connected to a Pass account");
-                return;
-            }
-            else if (response.Data.VerifiedWalletAddress != null && response.Data.VerifiedEmail != null && response.Data.MatchStatus != null && !response.Data.MatchStatus.IsEmailMatchWithWalletAddress)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email & Wallet don't match the same Pass user");
-                return;
-            }
-            else if (response.Data.VerifiedWalletAddress == null && response.Data.VerifiedEmail == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Issue with Data Verified statuses. Contact Admin");
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", userCheckError.error);
                 return;
             }
             else
             {
-                //Nothing to do here. Continue
+                await _profileService.SetEmailAsync(user, email);
+                await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s email has been updated to {email}", true);
             }
         }
-
-        await _profileService.SetEmailAsync(user, email);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s email address has been updated to {email}", true);
+        else
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", "Issue with UserCheck. Please Contact Admin");
+            return;
+        }
     }
 
     [SlashCommand("view-user-email", "View the email address of a specified user.")]
@@ -129,6 +98,14 @@ public class ProfileCommandsServer : ApplicationCommandModule
     [SlashCommand("set-user-wallet-address", "Set the wallet address of a specified user.")]
     public async Task SetUserWalletAddressCommand(InteractionContext ctx, [Option("user", "The user to set the wallet address for")] DiscordUser user, [Option("wallet-address", "The Pass wallet address to set")] string walletAddress)
     {
+        var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(user.Id.ToString());
+        string email = profile == null ? null : profile.Email;
+
+        if (!string.IsNullOrEmpty(email))
+        {
+            email = email.ToLower().Trim();
+        }
+
         // Check if the user has permission
         if (!_botService.HasPermission(ctx.User))
         {
@@ -142,70 +119,30 @@ public class ProfileCommandsServer : ApplicationCommandModule
             return;
         }
 
-        var apiEndpoint = _config["UserProfileAPIEndpoint"];
+        UserCheckAPISent payload = new UserCheckAPISent();
+        payload.WalletAddress = walletAddress;
+        payload.Email = email;
 
-        if (!string.IsNullOrEmpty(apiEndpoint) && apiEndpoint != "debug")
+        var userCheckError = await _profileService.CheckUserProfileAsync(payload);
+
+        if (userCheckError != null)
         {
-            HttpResponseMessage _response = await _httpClient.GetAsync(apiEndpoint);
-
-            // Ensure the response was successful
-            _response.EnsureSuccessStatusCode();
-
-            // Read the response content as a string
-            var responseContent = await _response.Content.ReadAsStringAsync();
-
-            // Deserialize the JSON response into the ApiResponse object
-            UserCheckApiResponse? response = JsonSerializer.Deserialize<UserCheckApiResponse>(responseContent, new JsonSerializerOptions
+            if (userCheckError.isError)
             {
-                PropertyNameCaseInsensitive = true // To handle case-insensitive JSON keys
-            });
-
-            if (response == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Response is null. Contact Admin");
-                return;
-            }
-            else if (response.Data == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"API Data is null. Contact Admin");
-                return;
-            }
-            else if (response.Data.VerifiedEmail != null && !response.Data.VerifiedEmail.IsPassEmail)
-            {
-                if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-                {
-                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Both Email and Wallet are not connected to a Pass account");
-                    return;
-                }
-                else
-                {
-                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email is not connected to a Pass account");
-                    return;
-                }
-            }
-            else if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Wallet is not connected to a Pass account");
-                return;
-            }
-            else if (response.Data.VerifiedWalletAddress != null && response.Data.VerifiedEmail != null && response.Data.MatchStatus != null && !response.Data.MatchStatus.IsEmailMatchWithWalletAddress)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email & Wallet don't match the same Pass user");
-                return;
-            }
-            else if (response.Data.VerifiedWalletAddress == null && response.Data.VerifiedEmail == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Issue with Data Verified statuses. Contact Admin");
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", userCheckError.error);
                 return;
             }
             else
             {
-                //Nothing to do here. Continue
+                await _profileService.SetWalletAddressAsync(user, walletAddress);
+                await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s wallet address has been updated to {walletAddress}", true);
             }
         }
-
-        await _profileService.SetWalletAddressAsync(user, walletAddress);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s wallet address has been updated to {walletAddress}", true);
+        else
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", "Issue with UserCheck. Please Contact Admin");
+            return;
+        }
     }
 
     [SlashCommand("view-user-wallet", "View the wallet address of a specified user.")]

@@ -4,6 +4,7 @@
     {
         public UserProfileWithPoints user { get; set; }
         public string error { get; set; }
+        public bool isError { get; set; }
 
 
     }

@@ -1,11 +1,14 @@
 ﻿using Azure;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.Configuration;
 using PassBot.Models;
 using PassBot.Services.Interfaces;
 using PassBot.Utilities;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -27,6 +30,14 @@ public class ProfileCommandsDM : ApplicationCommandModule
     [SlashCommand("set-email", "Set your Pass email address. This can only be done once every 30 days.")]
     public async Task SetEmailCommand(InteractionContext ctx, [Option("email", "Your email address")] string email)
     {
+        var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(ctx.User.Id.ToString());
+        string walletAddress = profile == null ? null : profile.WalletAddress;  
+
+        if (!string.IsNullOrEmpty(email))
+        {
+            email = email.ToLower().Trim();
+        }
+
         // Get the time until the user can update their email again
         var timeUntilNextChange = await _profileService.GetTimeUntilNextProfileChangeAsync(ctx.User.Id.ToString(), "Email");
 
@@ -44,70 +55,30 @@ public class ProfileCommandsDM : ApplicationCommandModule
             return;
         }
 
-        var apiEndpoint = _config["UserProfileAPIEndpoint"];
+        UserCheckAPISent payload = new UserCheckAPISent();
+        payload.WalletAddress = walletAddress;
+        payload.Email = email.Trim();
 
-        if(!string.IsNullOrEmpty(apiEndpoint) && apiEndpoint != "debug")
+        var userCheckError = await _profileService.CheckUserProfileAsync(payload);
+
+        if (userCheckError != null)
         {
-            HttpResponseMessage _response = await _httpClient.GetAsync(apiEndpoint);
-
-            // Ensure the response was successful
-            _response.EnsureSuccessStatusCode();
-
-            // Read the response content as a string
-            var responseContent = await _response.Content.ReadAsStringAsync();
-
-            // Deserialize the JSON response into the ApiResponse object
-            UserCheckApiResponse? response = JsonSerializer.Deserialize<UserCheckApiResponse>(responseContent, new JsonSerializerOptions
+            if (userCheckError.isError)
             {
-                PropertyNameCaseInsensitive = true // To handle case-insensitive JSON keys
-            });
-
-            if (response == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Response is null. Contact Admin");
-                return;
-            }
-            else if (response.Data == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"API Data is null. Contact Admin");
-                return;
-            }
-            else if (response.Data.VerifiedEmail != null && !response.Data.VerifiedEmail.IsPassEmail)
-            {
-                if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-                {
-                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Both Email and Wallet are not connected to a Pass account");
-                    return;
-                }
-                else
-                {
-                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email is not connected to a Pass account");
-                    return;
-                }
-            }
-            else if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Wallet is not connected to a Pass account");
-                return;
-            }
-            else if (response.Data.VerifiedWalletAddress != null && response.Data.VerifiedEmail != null && response.Data.MatchStatus != null && !response.Data.MatchStatus.IsEmailMatchWithWalletAddress)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email & Wallet don't match the same Pass user");
-                return;
-            }
-            else if (response.Data.VerifiedWalletAddress == null && response.Data.VerifiedEmail == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Issue with Data Verified statuses. Contact Admin");
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", userCheckError.error);
                 return;
             }
             else
             {
-                //Nothing to do here. Continue
+                await _profileService.SetEmailAsync(ctx.User, email);
+                await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your email has been set to {email}", true);
             }
         }
-
-        await _profileService.SetEmailAsync(ctx.User, email);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your email has been set to {email}", true);
+        else
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", "Issue with UserCheck. Please Contact Admin");
+            return;
+        }
     }
 
     [SlashCommand("view-email", "View your email address.")]
@@ -125,6 +96,14 @@ public class ProfileCommandsDM : ApplicationCommandModule
     [SlashCommand("set-wallet-address", "Set your Pass wallet address. This can only be done once every 30 days.")]
     public async Task SetWalletAddressCommand(InteractionContext ctx, [Option("wallet-address", "Your Pass wallet address")] string walletAddress)
     {
+        var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(ctx.User.Id.ToString());
+        string email = profile == null ? null : profile.Email;
+
+        if (!string.IsNullOrEmpty(email))
+        {
+            email = email.ToLower().Trim();
+        }
+
         // Get the time until the user can update their email again
         var timeUntilNextChange = await _profileService.GetTimeUntilNextProfileChangeAsync(ctx.User.Id.ToString(), "Wallet Address");
 
@@ -142,70 +121,30 @@ public class ProfileCommandsDM : ApplicationCommandModule
             return;
         }
 
-        var apiEndpoint = _config["UserProfileAPIEndpoint"];
+        UserCheckAPISent payload = new UserCheckAPISent();
+        payload.WalletAddress = walletAddress.Trim();
+        payload.Email = email;
 
-        if (!string.IsNullOrEmpty(apiEndpoint) && apiEndpoint != "debug")
+        var userCheckError = await _profileService.CheckUserProfileAsync(payload);
+
+        if (userCheckError != null)
         {
-            HttpResponseMessage _response = await _httpClient.GetAsync(apiEndpoint);
-
-            // Ensure the response was successful
-            _response.EnsureSuccessStatusCode();
-
-            // Read the response content as a string
-            var responseContent = await _response.Content.ReadAsStringAsync();
-
-            // Deserialize the JSON response into the ApiResponse object
-            UserCheckApiResponse? response = JsonSerializer.Deserialize<UserCheckApiResponse>(responseContent, new JsonSerializerOptions
+            if (userCheckError.isError)
             {
-                PropertyNameCaseInsensitive = true // To handle case-insensitive JSON keys
-            });
-
-            if (response == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Response is null. Contact Admin");
-                return;
-            }
-            else if (response.Data == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"API Data is null. Contact Admin");
-                return;
-            }
-            else if (response.Data.VerifiedEmail != null && !response.Data.VerifiedEmail.IsPassEmail)
-            {
-                if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-                {
-                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Both Email and Wallet are not connected to a Pass account");
-                    return;
-                }
-                else
-                {
-                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email is not connected to a Pass account");
-                    return;
-                }
-            }
-            else if (response.Data.VerifiedWalletAddress != null && !response.Data.VerifiedWalletAddress.IsPassWalletAddress)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Wallet is not connected to a Pass account");
-                return;
-            }
-            else if (response.Data.VerifiedWalletAddress != null && response.Data.VerifiedEmail != null && response.Data.MatchStatus != null && !response.Data.MatchStatus.IsEmailMatchWithWalletAddress)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Email & Wallet don't match the same Pass user");
-                return;
-            }
-            else if (response.Data.VerifiedWalletAddress == null && response.Data.VerifiedEmail == null)
-            {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", $"Issue with Data Verified statuses. Contact Admin");
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", userCheckError.error);
                 return;
             }
             else
             {
-                //Nothing to do here. Continue
+                await _profileService.SetEmailAsync(ctx.User, email);
+                await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your wallet address has been set to {email}", true);
             }
         }
-
-        await _profileService.SetWalletAddressAsync(ctx.User, walletAddress);
-        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your wallet address has been updated to {walletAddress}", true);
+        else
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", "Issue with UserCheck. Please Contact Admin");
+            return;
+        }
     }
 
     [SlashCommand("view-wallet", "View your wallet address.")]
