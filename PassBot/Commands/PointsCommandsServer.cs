@@ -147,8 +147,10 @@ namespace PassBot.Commands
                 return;
             }
 
+            //TODO: Create a call that contains both points and transferred points to avoid 2 calls
             long points = await _pointsService.GetUserPointsAsync(user.Id.ToString());
-            await EmbedUtils.CreateAndSendViewPointsEmbed(ctx, user, points);
+            long transferredPoints = await _pointsService.GetUserTransferredPointsAsync(user.Id.ToString());
+            await EmbedUtils.CreateAndSendViewPointsEmbed(ctx, user, points, transferredPoints);
         }
 
         /*

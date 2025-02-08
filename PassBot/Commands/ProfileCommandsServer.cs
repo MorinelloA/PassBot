@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.Configuration;
@@ -8,6 +9,8 @@ using PassBot.Services.Interfaces;
 using PassBot.Utilities;
 using System.Net.Http;
 using System.Text.Json;
+using DSharpPlus.Entities;
+using System.Linq;
 
 public class ProfileCommandsServer : ApplicationCommandModule
 {
@@ -26,52 +29,118 @@ public class ProfileCommandsServer : ApplicationCommandModule
         _httpClient = httpClient;
     }
 
-    [SlashCommand("set-user-email", "Set the email address of a specified user.")]
-    public async Task SetUserEmailCommand(InteractionContext ctx, [Option("user", "The user to set the email for")] DiscordUser user, [Option("email", "The email address to set")] string email)
+    [SlashCommand("warning-incomplete-profiles", "Warn users who have points but have not yet completed their profile.")]
+    public async Task WarningIncompleteProfilesCommand(InteractionContext ctx)
     {
-        var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(user.Id.ToString());
-        string walletAddress = profile == null ? null : profile.WalletAddress;
-
-        if (!string.IsNullOrEmpty(email))
-        {
-            email = email.ToLower().Trim();
-        }
-
         // Check if the user has permission
         if (!_botService.HasPermission(ctx.User))
         {
-            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder().WithContent("🚫 Access Denied: You do not have permission to use this command."));
             return;
         }
 
-        if (!ValidationUtils.IsValidEmail(email))
+        // ✅ Send an immediate response to let users know the process has started
+        await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
+            new DiscordInteractionResponseBuilder().WithContent("🔍 Checking for users with incomplete profiles..."));
+
+        // ✅ Fetch valid members directly, no extra API calls needed
+        var validMembers = await _profileService.GetListOfDiscordMembersWithIncompleteProfilesAsync(ctx);
+
+        Console.WriteLine($"Total Valid Members: {validMembers.Count}");
+
+        if (validMembers.Count == 0)
         {
-            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The email address '{email}' is not valid", $"Please enter a valid email address");
+            await ctx.Channel.SendMessageAsync("✅ All users with Pass Perks Points have completed their profiles!");
             return;
         }
 
-        UserCheckAPISent payload = new UserCheckAPISent();
-        payload.WalletAddress = walletAddress;
-        payload.Email = email;
+        // ✅ Send the initial message before pings
+        await ctx.Channel.SendMessageAsync("The following users have Pass Perks Points but have not yet completed their profile:");
 
-        var userCheckError = await _profileService.CheckUserProfileAsync(payload);
+        // ✅ Batch mentions into groups of 10 to avoid rate limits
+        const int batchSize = 10;
+        List<string> mentionBatches = validMembers
+            .Select(m => m.Mention) // Get mentions directly
+            .Chunk(batchSize) // Splits the list into groups of `batchSize`
+            .Select(batch => string.Join(" ", batch))
+            .ToList();
 
-        if (userCheckError != null)
+        foreach (var batch in mentionBatches)
         {
-            if (userCheckError.isError)
+            await ctx.Channel.SendMessageAsync(batch);
+            await Task.Delay(1000); // Add delay to prevent rate limits
+        }
+
+        // ✅ Send additional instructions separately (only once)
+        string instructions = @"
+Please remember that you need to complete your profile for points to transfer to the app at the end of each month.
+
+To set your Pass email, type `/set-email email:<YOUR EMAIL HERE>`
+To set your Pass wallet address, type `/set-wallet-address wallet-address:<YOUR WALLET ADDRESS HERE>`
+OPTIONAL: To set your X account, type `/set-x-account x-account:<YOUR X ACCOUNT HERE>`
+";
+
+        await ctx.Channel.SendMessageAsync(instructions);
+    }
+
+
+
+
+    [SlashCommand("set-user-email", "Set the email address of a specified user.")]
+    public async Task SetUserEmailCommand(InteractionContext ctx, [Option("user", "The user to set the email for")] DiscordUser user, [Option("email", "The email address to set")] string email)
+    {
+        try
+        {
+            var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(user.Id.ToString());
+            string walletAddress = profile == null ? null : profile.WalletAddress;
+
+            if (!string.IsNullOrEmpty(email))
             {
-                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", userCheckError.error);
+                email = email.ToLower().Trim();
+            }
+
+            // Check if the user has permission
+            if (!_botService.HasPermission(ctx.User))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
                 return;
+            }
+
+            if (!ValidationUtils.IsValidEmail(email))
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The email address '{email}' is not valid", $"Please enter a valid email address");
+                return;
+            }
+
+            UserCheckAPISent payload = new UserCheckAPISent();
+            payload.WalletAddress = walletAddress;
+            payload.Email = email;
+
+            var userCheckError = await _profileService.CheckUserProfileAsync(payload);
+
+            if (userCheckError != null)
+            {
+                if (userCheckError.isError)
+                {
+                    await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", userCheckError.error);
+                    return;
+                }
+                else
+                {
+                    await _profileService.SetEmailAsync(user, email);
+                    await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s email has been updated to {email}", true);
+                }
             }
             else
             {
-                await _profileService.SetEmailAsync(user, email);
-                await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"{user.Mention}'s email has been updated to {email}", true);
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", "Issue with UserCheck. Please Contact Admin");
+                return;
             }
         }
-        else
+        catch (Exception e)
         {
-            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", "Issue with UserCheck. Please Contact Admin");
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"Error", "Issue on Server End. Please try again later.");
             return;
         }
     }
@@ -105,6 +174,11 @@ public class ProfileCommandsServer : ApplicationCommandModule
         {
             email = email.ToLower().Trim();
         }
+        if (!string.IsNullOrEmpty(walletAddress))
+        {
+            walletAddress = walletAddress.ToLower().Trim();
+        }
+
 
         // Check if the user has permission
         if (!_botService.HasPermission(ctx.User))

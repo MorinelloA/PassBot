@@ -161,6 +161,28 @@ namespace PassBot.Services
             return points;
         }
 
+        public async Task<long> GetUserTransferredPointsAsync(string discordId)
+        {
+            long points = 0;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = "SELECT TransferredPoints FROM UserPoints WHERE DiscordId = @DiscordId";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DiscordId", discordId);
+                    await connection.OpenAsync();
+
+                    var result = await command.ExecuteScalarAsync();
+                    if (result != null)
+                    {
+                        points = Convert.ToInt64(result);
+                    }
+                }
+            }
+            return points;
+        }
+
         public async Task LogPointsAssignmentAsync(string discordId, string discordUsername, string assignerId, string assignerUsername, long points, string message = null)
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -388,6 +410,8 @@ namespace PassBot.Services
                         }
 
                         // Step 2: Create and execute the DELETE command
+                        //This is redundant with Step #4 now
+                        /*
                         string deleteQuery = @"
                     DELETE FROM UserPoints
                     WHERE DiscordId IN (SELECT DiscordId FROM @DiscordIdTable);";
@@ -402,6 +426,7 @@ namespace PassBot.Services
 
                             await deleteCmd.ExecuteNonQueryAsync();
                         }
+                        */
 
                         // Step 3: Create and execute the UPDATE command
                         string updateLogQuery = @"
@@ -421,6 +446,14 @@ namespace PassBot.Services
                             });
 
                             await updateCmd.ExecuteNonQueryAsync();
+                        }
+                                                
+                        // Step 4: Reset User Points Table
+                        string resetUserPointsQuery = @"EXEC [dbo].[resetUserPointTable];";
+
+                        using (SqlCommand resetCmd = new SqlCommand(resetUserPointsQuery, connection, transaction))
+                        {
+                            await resetCmd.ExecuteNonQueryAsync();
                         }
 
                         // Commit the transaction

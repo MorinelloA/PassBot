@@ -1,4 +1,5 @@
 ﻿using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 using PassBot.Models;
 
 namespace PassBot.Services.Interfaces
@@ -15,5 +16,6 @@ namespace PassBot.Services.Interfaces
         Task<TimeSpan?> GetTimeUntilNextProfileChangeAsync(string discordId, string item);
         Task<DateTime?> GetLastChangeTimeAsync(string discordId, string itemName);
         Task<UserCheckError> CheckUserProfileAsync(UserCheckAPISent profile);
+        Task<List<DiscordMember>> GetListOfDiscordMembersWithIncompleteProfilesAsync(InteractionContext ctx);
     }
 }

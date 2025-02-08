@@ -88,7 +88,7 @@ public class AdminCommands : ApplicationCommandModule
             }
 
             List<UserProfileWithPoints?> validatedUsers = new List<UserProfileWithPoints?>();
-            //Filter users who have valid PAss email and wallets
+            //Filter users who have valid Pass email and wallets
             foreach(var user in users)
             {
                 if(user == null || string.IsNullOrEmpty(user.WalletAddress) || string.IsNullOrEmpty(user.Email))

@@ -8,5 +8,6 @@
         public string WalletAddress { get; set; }
         public string XAccount { get; set; }
         public long Points { get; set; }
+        public long TransferredPoints { get; set; }
     }
 }

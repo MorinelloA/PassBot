@@ -103,6 +103,10 @@ public class ProfileCommandsDM : ApplicationCommandModule
         {
             email = email.ToLower().Trim();
         }
+        if (!string.IsNullOrEmpty(walletAddress))
+        {
+            walletAddress = walletAddress.ToLower().Trim();
+        }
 
         // Get the time until the user can update their email again
         var timeUntilNextChange = await _profileService.GetTimeUntilNextProfileChangeAsync(ctx.User.Id.ToString(), "Wallet Address");
@@ -136,8 +140,8 @@ public class ProfileCommandsDM : ApplicationCommandModule
             }
             else
             {
-                await _profileService.SetEmailAsync(ctx.User, email);
-                await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your wallet address has been set to {email}", true);
+                await _profileService.SetWalletAddressAsync(ctx.User, walletAddress.Trim());
+                await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success!", $"Your wallet address has been set to {walletAddress}", true);
             }
         }
         else

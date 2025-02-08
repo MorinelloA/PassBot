@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using DSharpPlus.SlashCommands;
 
 namespace PassBot.Services
 {
@@ -37,6 +38,15 @@ namespace PassBot.Services
 
         public async Task<UserCheckError> CheckUserProfileAsync(UserCheckAPISent profile)
         {
+            if(string.IsNullOrWhiteSpace(profile.Email))
+            {
+                profile.Email = null;
+            }
+            if (string.IsNullOrWhiteSpace(profile.WalletAddress))
+            {
+                profile.WalletAddress = null;
+            }
+
             // Serialize the payload to JSON
             var jsonPayload = JsonSerializer.Serialize(profile, new JsonSerializerOptions
             {
@@ -293,7 +303,8 @@ namespace PassBot.Services
                     up.Email,
                     up.WalletAddress,
                     up.XAccount,
-                    COALESCE(p.Points, 0) AS Points
+                    COALESCE(p.Points, 0) AS Points,
+                    COALESCE(p.TransferredPoints, 0) AS TransferredPoints
                 FROM UserProfile up
                 FULL OUTER JOIN UserPoints p ON up.DiscordId = p.DiscordId
                 WHERE COALESCE(p.Points, 0) > 0";
@@ -314,7 +325,8 @@ namespace PassBot.Services
                                 Email = reader["Email"]?.ToString(),
                                 WalletAddress = reader["WalletAddress"]?.ToString(),
                                 XAccount = reader["XAccount"]?.ToString(),
-                                Points = Convert.ToInt64(reader["Points"])
+                                Points = Convert.ToInt64(reader["Points"]),
+                                TransferredPoints = Convert.ToInt64(reader["TransferredPoints"])
                             };
 
                             profiles.Add(profile);
@@ -339,7 +351,8 @@ namespace PassBot.Services
                         up.Email,
                         up.WalletAddress,
                         up.XAccount,
-                        COALESCE(p.Points, 0) AS Points
+                        COALESCE(p.Points, 0) AS Points,
+                        COALESCE(p.TransferredPoints, 0) AS TransferredPoints
                     FROM UserProfile up
                     FULL OUTER JOIN UserPoints p ON up.DiscordId = p.DiscordId
                     WHERE COALESCE(up.DiscordId, p.DiscordId) = @DiscordId";
@@ -360,7 +373,8 @@ namespace PassBot.Services
                                 Email = reader["Email"]?.ToString(),
                                 WalletAddress = reader["WalletAddress"]?.ToString(),
                                 XAccount = reader["XAccount"]?.ToString(),
-                                Points = Convert.ToInt64(reader["Points"])
+                                Points = Convert.ToInt64(reader["Points"]),
+                                TransferredPoints = Convert.ToInt64(reader["TransferredPoints"])
                             };
                         }
                     }
@@ -499,6 +513,55 @@ namespace PassBot.Services
             }
         }
 
+        public async Task<List<DiscordMember>> GetListOfDiscordMembersWithIncompleteProfilesAsync(InteractionContext ctx)
+        {
+            List<ulong> discordIds = new List<ulong>();
 
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+            SELECT CAST(UPoints.DiscordId AS BIGINT)
+            FROM [PassApp].[dbo].[UserPoints] AS UPoints
+            LEFT JOIN [PassApp].[dbo].[UserProfile] AS UProfile ON UPoints.DiscordId = UProfile.DiscordId
+            WHERE (UProfile.Email IS NULL OR UProfile.WalletAddress IS NULL) AND UPoints.Points > 0
+            ORDER BY UProfile.DiscordUsername;";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    await connection.OpenAsync();
+
+                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            ulong discordId = (ulong)reader.GetInt64(0);
+                            discordIds.Add(discordId);
+                        }
+                    }
+                }
+            }
+
+            // ✅ Fetch all members in one API call instead of multiple
+            var allMembers = await ctx.Guild.GetAllMembersAsync();
+            var memberLookup = allMembers.ToDictionary(m => m.Id, m => m); // Convert to Dictionary for fast lookups
+
+            Console.WriteLine($"Total Members in Guild (Fetched from API): {allMembers.Count}");
+            Console.WriteLine($"Total Discord IDs fetched from DB: {discordIds.Count}");
+
+            if (allMembers.Count == 0)
+            {
+                Console.WriteLine("⚠️ No members were fetched from the API. Check if the bot has 'Server Members Intent' enabled.");
+            }
+
+            // ✅ Return only valid `DiscordMember` objects instead of just IDs
+            var validMembers = discordIds
+                .Where(id => memberLookup.ContainsKey(id))
+                .Select(id => memberLookup[id])
+                .ToList();
+
+            Console.WriteLine($"Total Valid Users (After Filtering): {validMembers.Count}");
+
+            return validMembers;
+        }
     }
 }

@@ -138,15 +138,18 @@ namespace PassBot.Utilities
         }*/
 
 
-        public static async Task CreateAndSendViewPointsEmbed(InteractionContext ctx, DiscordUser user, long points, bool ephemeral = true)
+        public static async Task CreateAndSendViewPointsEmbed(InteractionContext ctx, DiscordUser user, long points, long transferredPoints, bool ephemeral = true)
         {
             // Create an embed builder for the points response
             var embed = new DiscordEmbedBuilder
             {
-                Title = "Points Summary",
-                Description = $"{user.Mention} has {points} points",
+                Title = $"Points for {user.Username}",
                 Color = DiscordColor.Azure // You can customize the color here
             };
+
+            embed.AddField("Pending Points", $"{points} points", false);
+            embed.AddField("Transferred Points", $"{transferredPoints} points", false);
+            embed.AddField("Total Points", $"{(points + transferredPoints)} points", false);
 
             // Add the user's avatar to the embed
             embed.WithThumbnail(user.AvatarUrl);
@@ -182,7 +185,9 @@ namespace PassBot.Utilities
             embed.AddField("Email", string.IsNullOrEmpty(profile.Email) ? "Not set" : profile.Email, false);
             embed.AddField("Wallet Address", string.IsNullOrEmpty(profile.WalletAddress) ? "Not set" : profile.WalletAddress, false);
             embed.AddField("X Account", string.IsNullOrEmpty(profile.XAccount) ? "Not set" : profile.XAccount, false);
-            embed.AddField("Points Balance", $"{profile.Points} points", false);
+            embed.AddField("Pending Points", $"{profile.Points} points", false);
+            embed.AddField("Transferred Points", $"{profile.TransferredPoints} points", false);
+            embed.AddField("Total Points", $"{(profile.Points + profile.TransferredPoints)} points", false);
 
             // Use the recipient's avatar as the thumbnail
             embed.WithThumbnail(user.AvatarUrl);
