@@ -17,5 +17,8 @@ namespace PassBot.Services.Interfaces
         Task<DateTime?> GetLastChangeTimeAsync(string discordId, string itemName);
         Task<UserCheckError> CheckUserProfileAsync(UserCheckAPISent profile);
         Task<List<DiscordMember>> GetListOfDiscordMembersWithIncompleteProfilesAsync(InteractionContext ctx);
+        Task LockProfilesAsync();
+        Task UnlockProfilesAsync();
+        Task<bool> IsProfilesLockedAsync();
     }
 }

@@ -563,5 +563,64 @@ namespace PassBot.Services
 
             return validMembers;
         }
+
+        public async Task LockProfilesAsync()
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+                    UPDATE Variable 
+                    SET Value = 'True' 
+                    WHERE Name = 'ProfileLock';";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        public async Task UnlockProfilesAsync()
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+                    UPDATE Variable 
+                    SET Value = 'False' 
+                    WHERE Name = 'ProfileLock';";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        public async Task<bool> IsProfilesLockedAsync()
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+                    SELECT Value 
+                    FROM Variable 
+                    WHERE Name = 'ProfileLock';";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    await connection.OpenAsync();
+                    var result = await command.ExecuteScalarAsync();
+
+                    if (result != null)
+                    {
+                        string value = result.ToString().Trim();
+                        return !value.Equals("False", StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    return true; // Default to true if the value isn't found
+                }
+            }
+        }
     }
 }

@@ -29,6 +29,36 @@ public class ProfileCommandsServer : ApplicationCommandModule
         _httpClient = httpClient;
     }
 
+    [SlashCommand("lock-profiles", "Lock users from setting profile items.")]
+    public async Task LockProfilesCommand(InteractionContext ctx)
+    {
+        // Check if the user has permission
+        if (!_botService.HasPermission(ctx.User))
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            return;
+        }
+
+        await _profileService.LockProfilesAsync();
+
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success", "Profiles Locked Successfully", true);
+    }
+
+    [SlashCommand("unlock-profiles", "Unlock users from setting profile items.")]
+    public async Task UnlockProfilesCommand(InteractionContext ctx)
+    {
+        // Check if the user has permission
+        if (!_botService.HasPermission(ctx.User))
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            return;
+        }
+
+        await _profileService.UnlockProfilesAsync();
+
+        await EmbedUtils.CreateAndSendSuccessEmbed(ctx, "Success", "Profiles Unlocked Successfully", true);
+    }
+
     [SlashCommand("warning-incomplete-profiles", "Warn users who have points but have not yet completed their profile.")]
     public async Task WarningIncompleteProfilesCommand(InteractionContext ctx)
     {
@@ -104,6 +134,13 @@ OPTIONAL: To set your X account, type `/set-x-account x-account:<YOUR X ACCOUNT 
             if (!_botService.HasPermission(ctx.User))
             {
                 await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+                return;
+            }
+
+            bool isLocked = await _profileService.IsProfilesLockedAsync();
+            if (isLocked)
+            {
+                await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "Profiles are currently locked. This is probably temporary, but please message an administrator/moderator to be sure.");
                 return;
             }
 
@@ -187,6 +224,13 @@ OPTIONAL: To set your X account, type `/set-x-account x-account:<YOUR X ACCOUNT 
             return;
         }
 
+        bool isLocked = await _profileService.IsProfilesLockedAsync();
+        if (isLocked)
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "Profiles are currently locked. This is probably temporary, but please message an administrator/moderator to be sure.");
+            return;
+        }
+
         if (!ValidationUtils.IsValidEthereumAddress(walletAddress))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, $"The wallet address '{walletAddress}' is not valid", $"Please enter a valid Pass wallet address");
@@ -245,6 +289,13 @@ OPTIONAL: To set your X account, type `/set-x-account x-account:<YOUR X ACCOUNT 
         if (!_botService.HasPermission(ctx.User))
         {
             await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "You do not have permission to use this command.");
+            return;
+        }
+
+        bool isLocked = await _profileService.IsProfilesLockedAsync();
+        if (isLocked)
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "Profiles are currently locked. This is probably temporary, but please message an administrator/moderator to be sure.");
             return;
         }
 

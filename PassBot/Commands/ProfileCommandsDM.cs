@@ -30,6 +30,13 @@ public class ProfileCommandsDM : ApplicationCommandModule
     [SlashCommand("set-email", "Set your Pass email address. This can only be done once every 30 days.")]
     public async Task SetEmailCommand(InteractionContext ctx, [Option("email", "Your email address")] string email)
     {
+        bool isLocked = await _profileService.IsProfilesLockedAsync();
+        if (isLocked)
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "Profiles are currently locked. This is probably temporary, but please message an administrator/moderator to be sure.");
+            return;
+        }
+
         var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(ctx.User.Id.ToString());
         string walletAddress = profile == null ? null : profile.WalletAddress;  
 
@@ -96,6 +103,13 @@ public class ProfileCommandsDM : ApplicationCommandModule
     [SlashCommand("set-wallet-address", "Set your Pass wallet address. This can only be done once every 30 days.")]
     public async Task SetWalletAddressCommand(InteractionContext ctx, [Option("wallet-address", "Your Pass wallet address")] string walletAddress)
     {
+        bool isLocked = await _profileService.IsProfilesLockedAsync();
+        if (isLocked)
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "Profiles are currently locked. This is probably temporary, but please message an administrator/moderator to be sure.");
+            return;
+        }
+
         var profile = await _profileService.GetUserProfileWithPointsByDiscordIdAsync(ctx.User.Id.ToString());
         string email = profile == null ? null : profile.Email;
 
@@ -166,6 +180,13 @@ public class ProfileCommandsDM : ApplicationCommandModule
     [SlashCommand("set-x-account", "Sets your X (formerly Twitter) account in your profile. This can only be done once every 30 days.")]
     public async Task SetXAccountCommand(InteractionContext ctx, [Option("x-account", "Your X account (without the @)")] string xAccount)
     {
+        bool isLocked = await _profileService.IsProfilesLockedAsync();
+        if (isLocked)
+        {
+            await EmbedUtils.CreateAndSendWarningEmbed(ctx, "Access Denied", "Profiles are currently locked. This is probably temporary, but please message an administrator/moderator to be sure.");
+            return;
+        }
+
         // Get the time until the user can update their email again
         var timeUntilNextChange = await _profileService.GetTimeUntilNextProfileChangeAsync(ctx.User.Id.ToString(), "X Account");
 
