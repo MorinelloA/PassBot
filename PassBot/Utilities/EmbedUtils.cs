@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Bibliography;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using PassBot.Models;
@@ -175,6 +176,15 @@ namespace PassBot.Utilities
 
         public static async Task CreateAndSendFullProfileEmbed(InteractionContext ctx, DiscordUser user, UserProfileWithPoints profile, bool ephemeral = true)
         {
+            await BuildAndSendProfileEmbed(ctx.Interaction, user, profile, ephemeral);
+        }
+                public static async Task CreateAndSendFullProfileEmbed(DiscordInteraction interaction, DiscordUser user, UserProfileWithPoints profile, bool ephemeral = true)
+        {
+            await BuildAndSendProfileEmbed(interaction, user, profile, ephemeral);
+        }
+
+        private static async Task BuildAndSendProfileEmbed(DiscordInteraction interaction, DiscordUser user, UserProfileWithPoints profile, bool ephemeral)
+        {
             var embed = new DiscordEmbedBuilder
             {
                 Title = $"{profile.DiscordUsername}'s Profile",
@@ -192,8 +202,14 @@ namespace PassBot.Utilities
             // Use the recipient's avatar as the thumbnail
             embed.WithThumbnail(user.AvatarUrl);
 
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
+            var response = new DiscordInteractionResponseBuilder()
+                .AddEmbed(embed)
+                .AsEphemeral(ephemeral);
+
+            await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, response);
         }
+
+
 
         public static async Task CreateAndSendCheckInEmbed(InteractionContext ctx, long checkInPoints, long totalBalance, bool ephemeral = false)
         {
@@ -270,16 +286,36 @@ namespace PassBot.Utilities
             await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
         }
 
+
         public static async Task CreateAndSendWarningEmbed(InteractionContext ctx, string title, string description, bool ephemeral = true)
         {
-            var embed = CreateWarningEmbed(title, description);
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
+            await BuildAndSendWarningEmbed(ctx.Interaction, title, description, ephemeral);
         }
 
-        public static async Task CreateAndSendSuccessEmbed(InteractionContext ctx, string title, string description, bool ephemeral = false)
+        public static async Task CreateAndSendWarningEmbed(DiscordInteraction interaction, string title, string description, bool ephemeral = true)
         {
-            var embed = CreateSuccessEmbed(title, description);
-            await ctx.CreateResponseAsync(new DiscordInteractionResponseBuilder().AddEmbed(embed).AsEphemeral(ephemeral));
+            await BuildAndSendWarningEmbed(interaction, title, description, ephemeral);
+        }
+
+        public static DiscordEmbedBuilder CreateWarningEmbed(string title, string description)
+        {
+            return new DiscordEmbedBuilder
+            {
+                Title = title,
+                Description = description,
+                Color = DiscordColor.Orange
+            };
+        }
+
+        private static async Task BuildAndSendWarningEmbed(DiscordInteraction interaction, string title, string description, bool ephemeral)
+        {
+            var embed = CreateWarningEmbed(title, description);
+
+            var response = new DiscordInteractionResponseBuilder()
+                .AddEmbed(embed)
+                .AsEphemeral(ephemeral);
+
+            await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, response);
         }
 
         public static DiscordEmbedBuilder CreateSuccessEmbed(string title, string description)
@@ -292,15 +328,27 @@ namespace PassBot.Utilities
             };
         }
 
-        public static DiscordEmbedBuilder CreateWarningEmbed(string title, string description)
+        public static async Task CreateAndSendSuccessEmbed(InteractionContext ctx, string title, string description, bool ephemeral = false)
         {
-            return new DiscordEmbedBuilder
-            {
-                Title = title,
-                Description = description,
-                Color = DiscordColor.Orange
-            };
+            await BuildAndSendSuccessEmbed(ctx.Interaction, title, description, ephemeral);
         }
+
+        public static async Task CreateAndSendSuccessEmbed(DiscordInteraction interaction, string title, string description, bool ephemeral = false)
+        {
+            await BuildAndSendSuccessEmbed(interaction, title, description, ephemeral);
+        }
+
+        private static async Task BuildAndSendSuccessEmbed(DiscordInteraction interaction, string title, string description, bool ephemeral)
+        {
+            var embed = CreateSuccessEmbed(title, description);
+
+            var response = new DiscordInteractionResponseBuilder()
+                .AddEmbed(embed)
+                .AsEphemeral(ephemeral);
+
+            await interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, response);
+        }
+
 
         public static async Task CreateAndSendItemsListEmbed(InteractionContext ctx, List<Item> items, bool ephemeral = false)
         {

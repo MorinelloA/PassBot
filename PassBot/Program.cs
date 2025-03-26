@@ -49,6 +49,8 @@ services.AddSingleton<ProfileCommandsServer>();
 services.AddSingleton<AdminCommands>();
 services.AddSingleton<UserCommands>();
 
+services.AddSingleton<ProfileButtonHandler>();
+
 // Build the service provider
 var serviceProvider = services.BuildServiceProvider();
 
@@ -82,6 +84,15 @@ slash.RegisterCommands<ProfileCommandsDM>();
 //slash.RegisterCommands<RedemptionCommandsDM>();
 slash.RegisterCommands<AdminCommands>(guildId: ulong.Parse(configuration["GuildId"]));
 slash.RegisterCommands<UserCommands>();
+
+// Register Button Interaction Event
+var profileButtonHandler = serviceProvider.GetRequiredService<ProfileButtonHandler>();
+discord.ComponentInteractionCreated += profileButtonHandler.HandleButtonInteraction;
+
+discord.ModalSubmitted += profileButtonHandler.HandleSetEmailModal;
+discord.ModalSubmitted += profileButtonHandler.HandleSetWalletModal;
+discord.ModalSubmitted += profileButtonHandler.HandleSetXAccountModal;
+
 
 // Scheduler
 var channelId = ulong.Parse(configuration["WarningScheduleChannel"]);

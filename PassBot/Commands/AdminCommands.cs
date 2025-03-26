@@ -33,6 +33,42 @@ public class AdminCommands : ApplicationCommandModule
         _httpClient = httpClient;
     }
 
+    [SlashCommand("display-x-quest-options", "Display Discord X Quest Options")]
+    public async Task DisplayXOptions(InteractionContext ctx)
+    {
+        try
+        {
+            // 1️⃣ First, send the initial response (this creates the "Username used /command" line)
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder().WithContent("⏳ Preparing X options..."));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+
+        // 2️⃣ Delete the initial response IMMEDIATELY
+        var initialResponse = await ctx.GetOriginalResponseAsync();
+        await initialResponse.DeleteAsync();
+
+        // 3️⃣ Now send your actual message with embed and buttons
+        var embed = new DiscordEmbedBuilder()
+            .WithTitle("Discord X Quest Options")
+            .WithDescription("**Select from the following options**\n\n")
+            .WithColor(DiscordColor.Green);
+
+        var buttons = new DiscordButtonComponent[]
+        {
+        new(ButtonStyle.Primary, "btn_view_quests", "👀 View Current Quests"),
+        new(ButtonStyle.Success, "btn_set_quest", "📜 Set New Quest"),
+        new(ButtonStyle.Primary, "btn_distribute_x_points", "💸 Distribute Pending Points")
+        };
+
+        await ctx.Channel.SendMessageAsync(new DiscordMessageBuilder()
+            .AddEmbed(embed)
+            .AddComponents(buttons));
+    }
+
     [SlashCommand("generate-points-csv-upload", "Generates an .csv of current points for every user to upload.")]
     public async Task GeneratePointsCSVUploadCommand(InteractionContext ctx)
     {

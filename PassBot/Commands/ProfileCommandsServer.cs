@@ -103,18 +103,49 @@ public class ProfileCommandsServer : ApplicationCommandModule
         }
 
         // ✅ Send additional instructions separately (only once)
-        string instructions = @"
-Please remember that you need to complete your profile for points to transfer to the app at the end of each month.
+        //string instructions = @"Please remember that you need to complete your profile for points to transfer to the app at the end of each month.";      
+        //await ctx.Channel.SendMessageAsync(instructions);
 
-To set your Pass email, type `/set-email email:<YOUR EMAIL HERE>`
-To set your Pass wallet address, type `/set-wallet-address wallet-address:<YOUR WALLET ADDRESS HERE>`
-OPTIONAL: To set your X account, type `/set-x-account x-account:<YOUR X ACCOUNT HERE>`
-";
-
-        await ctx.Channel.SendMessageAsync(instructions);
+        await DisplayProfileOptions(ctx);
     }
 
+    [SlashCommand("display-profile-options", "Display Discord User Profile Options")]
+    public async Task DisplayProfileOptions(InteractionContext ctx)
+    {
+        try
+        {
+            // 1️⃣ First, send the initial response (this creates the "Username used /command" line)
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder().WithContent("⏳ Preparing profile options..."));
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
 
+        // 2️⃣ Delete the initial response IMMEDIATELY
+        var initialResponse = await ctx.GetOriginalResponseAsync();
+        await initialResponse.DeleteAsync();
+
+        // 3️⃣ Now send your actual message with embed and buttons
+        var embed = new DiscordEmbedBuilder()
+            .WithTitle("Discord Profile Options")
+            .WithDescription("**Profiles are required to transfer your points earned in Discord to Pass App**\n" +
+                             "Without your Pass Email and Wallet Address, we can't transfer your points\n\n")
+            .WithColor(DiscordColor.Green);
+
+        var buttons = new DiscordButtonComponent[]
+        {
+        new(ButtonStyle.Primary, "btn_view_profile", "👀 View Profile"),
+        new(ButtonStyle.Success, "btn_set_email", "✉️ Set Email"),
+        new(ButtonStyle.Primary, "btn_set_wallet", "🪙 Set Wallet"),
+        new(ButtonStyle.Success, "btn_set_x", "🐦 Set X Account")
+        };
+
+        await ctx.Channel.SendMessageAsync(new DiscordMessageBuilder()
+            .AddEmbed(embed)
+            .AddComponents(buttons));
+    }
 
 
     [SlashCommand("set-user-email", "Set the email address of a specified user.")]

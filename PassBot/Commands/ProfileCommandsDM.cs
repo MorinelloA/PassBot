@@ -1,6 +1,10 @@
 ﻿using Azure;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DSharpPlus;
+using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
 using Microsoft.Extensions.Configuration;
 using PassBot.Models;
@@ -26,7 +30,7 @@ public class ProfileCommandsDM : ApplicationCommandModule
         _config = config;
         _httpClient = httpClient;
     }
-        
+
     [SlashCommand("set-email", "Set your Pass email address. This can only be done once every 30 days.")]
     public async Task SetEmailCommand(InteractionContext ctx, [Option("email", "Your email address")] string email)
     {
